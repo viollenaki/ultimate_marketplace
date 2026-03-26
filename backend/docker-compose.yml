@@ -1,0 +1,79 @@
+services:
+  app:
+    build: .
+    ports:
+    - 8000:8000
+    volumes:
+    - ./:/app
+    environment:
+    - DATABASE_URL=${DATABASE_URL}
+    - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+  celery_worker:
+    build: .
+    command: celery -A tasks.celery_app worker --loglevel=info
+    volumes:
+    - ./:/app
+    environment:
+    - DATABASE_URL=${DATABASE_URL}
+    - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+  db:
+    image: mysql:8
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: '1234'
+      MYSQL_DATABASE: ultimate_marketplace
+    ports:
+    - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p1234"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+  redis:
+    image: redis:7
+    ports:
+    - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+    container_name: elasticsearch
+    environment:
+    - discovery.type=single-node
+    - xpack.security.enabled=false
+    - xpack.ml.enabled=false
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+    - "9200:9200"
+    volumes:
+    - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 60s
+volumes:
+  esdata:
