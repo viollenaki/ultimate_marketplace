@@ -19,9 +19,7 @@ class UltimateMarketplaceApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
         textTheme: AppStyles.textTheme,
         inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       initialRoute: AppRoutes.login,

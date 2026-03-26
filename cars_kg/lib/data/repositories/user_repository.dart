@@ -8,8 +8,8 @@ class UserRepository implements UserProvider {
   UserRepository({
     required ApiService apiService,
     required LocalStorage localStorage,
-  })  : _apiService = apiService,
-        _localStorage = localStorage;
+  }) : _apiService = apiService,
+       _localStorage = localStorage;
 
   final ApiService _apiService;
   final LocalStorage _localStorage;

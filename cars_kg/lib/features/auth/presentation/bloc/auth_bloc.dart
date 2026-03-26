@@ -35,11 +35,7 @@ class AuthBloc {
 
       _emit(
         AuthAuthenticated(
-          User(
-            id: '1',
-            email: event.email,
-            name: 'Authenticated User',
-          ),
+          User(id: '1', email: event.email, name: 'Authenticated User'),
         ),
       );
     }

@@ -35,10 +35,7 @@ class _LoginFormState extends State<LoginForm> {
 
     setState(() => _isLoading = true);
     await Future<void>.delayed(const Duration(milliseconds: 250));
-    widget.onSubmit(
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
+    widget.onSubmit(_emailController.text.trim(), _passwordController.text);
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -56,9 +53,7 @@ class _LoginFormState extends State<LoginForm> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             validator: Validators.validateEmail,
-            decoration: const InputDecoration(
-              hintText: AppStrings.emailHint,
-            ),
+            decoration: const InputDecoration(hintText: AppStrings.emailHint),
           ),
           const SizedBox(height: 12),
           TextFormField(

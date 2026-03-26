@@ -9,10 +9,7 @@ class AppStyles {
       fontWeight: FontWeight.w700,
       color: AppColors.textPrimary,
     ),
-    bodyMedium: TextStyle(
-      fontSize: 16,
-      color: AppColors.textPrimary,
-    ),
+    bodyMedium: TextStyle(fontSize: 16, color: AppColors.textPrimary),
   );
 
   const AppStyles._();
