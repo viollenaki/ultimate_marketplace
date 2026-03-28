@@ -59,8 +59,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _nameController,
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty ? 'Name is required' : null,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Name is required'
+                      : null,
                   decoration: const InputDecoration(labelText: 'Full name'),
                 ),
                 const SizedBox(height: 12),
@@ -106,7 +107,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     }
                     return null;
                   },
-                  decoration: const InputDecoration(labelText: 'Repeat password'),
+                  decoration: const InputDecoration(
+                    labelText: 'Repeat password',
+                  ),
                 ),
                 if (authState.errorMessage != null) ...[
                   const SizedBox(height: 12),

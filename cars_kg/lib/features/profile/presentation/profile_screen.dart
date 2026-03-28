@@ -61,17 +61,12 @@ class ProfileScreen extends ConsumerWidget {
           _settingTile(Icons.notifications_none, 'Notifications', () {}),
           _settingTile(Icons.shield_outlined, 'Privacy', () {}),
           _settingTile(Icons.help_outline, 'Help Center', () {}),
-          _settingTile(
-            Icons.logout,
-            'Log out',
-            () async {
-              await ref.read(authControllerProvider.notifier).signOut();
-              if (context.mounted) {
-                context.go('/home');
-              }
-            },
-            color: AppPalette.error,
-          ),
+          _settingTile(Icons.logout, 'Log out', () async {
+            await ref.read(authControllerProvider.notifier).signOut();
+            if (context.mounted) {
+              context.go('/home');
+            }
+          }, color: AppPalette.error),
         ],
       ),
       bottomNavigationBar: MarketplaceBottomNav(

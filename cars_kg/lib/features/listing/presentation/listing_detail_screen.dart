@@ -174,7 +174,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                               return;
                             }
                             if (context.mounted) {
-                              showNotReadySnackBar(context, l10n.t('chatLater'));
+                              showNotReadySnackBar(
+                                context,
+                                l10n.t('chatLater'),
+                              );
                             }
                           },
                           icon: const Icon(Icons.chat_bubble_outline),
@@ -189,7 +192,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                             return;
                           }
                           if (context.mounted) {
-                            showNotReadySnackBar(context, 'Promotions integration soon');
+                            showNotReadySnackBar(
+                              context,
+                              'Promotions integration soon',
+                            );
                           }
                         },
                         child: Text(l10n.t('promote')),
@@ -202,7 +208,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                             return;
                           }
                           if (context.mounted) {
-                            showNotReadySnackBar(context, 'Favorites sync is next');
+                            showNotReadySnackBar(
+                              context,
+                              'Favorites sync is next',
+                            );
                           }
                         },
                         icon: const Icon(Icons.favorite_border),
