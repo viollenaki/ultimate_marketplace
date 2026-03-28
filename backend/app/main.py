@@ -2,8 +2,10 @@
 FastAPI application entry point.
 """
 import logging
-from fastapi import FastAPI
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1 import api_router
 from app.core.config import settings
@@ -40,6 +42,21 @@ def create_application() -> FastAPI:
     
     # Include API router
     application.include_router(api_router, prefix=settings.API_V1_STR)
+
+    @application.exception_handler(HTTPException)
+    async def http_exception_handler(_request, exc: HTTPException):
+        detail = exc.detail
+        if isinstance(detail, dict) and detail.get("success") is False:
+            return JSONResponse(status_code=exc.status_code, content=detail)
+        if isinstance(detail, dict):
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"success": False, "error": detail.get("message", str(detail))},
+            )
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"success": False, "error": str(detail)},
+        )
     
     @application.on_event("startup")
     async def startup_event():

@@ -53,6 +53,13 @@ class Settings(BaseSettings):
         default="http://elasticsearch:9200",
     )
 
+    # Firebase Admin (service account JSON path, relative to cwd or absolute)
+    FIREBASE_CREDENTIALS_PATH: str = Field(default="serviceAccountKey.json")
+
+    # Custom JWT (API access after Firebase login)
+    JWT_ALGORITHM: str = Field(default="HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60 * 24)
+
 
 # Create settings instance
 settings = Settings()

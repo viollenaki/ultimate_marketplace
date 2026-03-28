@@ -1,0 +1,131 @@
+Project: Ultimate Marketplace Backend
+
+Overview:
+This backend is part of a scalable marketplace platform supporting mobile and web clients.
+It is responsible for authentication, user management, product management, orders, payments, and notifications.
+
+Tech Stack:
+
+* Framework: FastAPI
+* Language: Python 3.10+
+* Database: MySQL
+* Cache & Broker: Redis
+* Background Tasks: Celery
+* Auth: JWT (or Firebase Auth if specified)
+* ORM: SQLAlchemy
+* Validation: Pydantic
+
+Architecture:
+
+* Follow Clean Architecture principles
+* Use layered structure:
+
+  * API (routers/controllers)
+  * Services (business logic)
+  * Repositories (data access)
+  * Models (DB schemas)
+  * Schemas (Pydantic)
+* Each module must be isolated and reusable
+
+General Rules:
+
+* All endpoints must be RESTful
+* Use async/await everywhere possible
+* No business logic inside routers
+* Use dependency injection (FastAPI Depends)
+* Write reusable and modular code
+* Avoid tight coupling between components
+
+Database Rules:
+
+* Use normalized schema
+* Always include:
+
+  * id (primary key)
+  * created_at
+  * updated_at
+* Use UUID for public IDs
+* Add indexes for frequently queried fields
+* Use migrations (Alembic)
+
+Authentication & Security:
+
+* Use JWT access + refresh tokens
+* Hash passwords using bcrypt
+* Never store plain passwords
+* Validate all inputs
+* Implement role-based access (Admin, User, etc.)
+* Protect sensitive endpoints
+
+Error Handling:
+
+* Use global exception handlers
+* Return consistent JSON responses:
+  {
+  "success": false,
+  "error": "message"
+  }
+* Do not expose internal errors
+
+Performance:
+
+* Use Redis for caching frequently accessed data
+* Use pagination for all list endpoints
+* Avoid N+1 queries
+* Use background tasks for heavy operations
+
+Logging:
+
+* Log all important actions (auth, payments, errors)
+* Use structured logging
+
+API Standards:
+
+* Use versioning: /api/v1/
+* Use proper HTTP methods:
+  GET, POST, PUT, DELETE
+* Return proper status codes
+
+Testing:
+
+* Write unit tests for services
+* Use pytest
+* Mock external dependencies
+
+---
+
+Requirement Management Rule (VERY IMPORTANT):
+
+* ALL new requirements MUST be added ONLY in this (requirements.txt) file.
+* DO NOT invent or assume requirements in prompts.
+* If a request introduces new functionality:
+  → First update this file
+  → Then implement
+
+If something is unclear:
+
+* Ask clarifying questions BEFORE implementation
+
+---
+
+
+Suggestions for Implementation:
+
+* Prefer service-based logic instead of fat controllers
+* Keep functions small and single-purpose
+* Use DTOs (Pydantic schemas) strictly
+* Separate read and write operations if scaling (CQRS optional)
+* Prepare for microservices (loose coupling)
+
+When generating code:
+
+* Always include:
+
+  * Folder structure
+  * File names
+  * Code
+  * Short explanation
+
+When unsure:
+
+* Ask instead of guessing
