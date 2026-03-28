@@ -4,9 +4,9 @@ import logging
 import secrets
 from typing import Any
 
+import bcrypt
 from firebase_admin import auth as firebase_auth
 from firebase_admin.exceptions import FirebaseError
-from passlib.context import CryptContext
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,12 +19,11 @@ from app.services import jwt_service
 
 logger = logging.getLogger(__name__)
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def _firebase_only_password_hash() -> str:
     """Unused for login; satisfies NOT NULL hashed_password for Firebase users."""
-    return _pwd_context.hash(f"firebase:{secrets.token_urlsafe(32)}")
+    raw = f"firebase:{secrets.token_urlsafe(32)}".encode("utf-8")
+    return bcrypt.hashpw(raw, bcrypt.gensalt()).decode("utf-8")
 
 
 def _verify_firebase_token_sync(id_token: str) -> dict[str, Any]:
