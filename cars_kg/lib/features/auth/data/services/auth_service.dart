@@ -25,6 +25,7 @@ class AuthService {
   final GoogleSignIn _googleSignIn;
   final Dio _dio;
   final AuthSecureStorage _secureStorage;
+  Future<void>? _googleSignInInitialization;
 
   Future<UserCredential> signInWithEmail({
     required String email,
@@ -51,6 +52,8 @@ class AuthService {
       throw const NoInternetConnectionException();
     }
 
+    await _ensureGoogleSignInInitialized();
+
     final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
     final googleAuth = googleUser.authentication;
     final credential = GoogleAuthProvider.credential(
@@ -66,8 +69,8 @@ class AuthService {
     }
 
     final response = await _dio.post<Map<String, dynamic>>(
-      '${Env.backendUrl}/auth/login/firebase',
-      data: {'idToken': idToken},
+      '${Env.backendUrl}/api/v1/auth/login/firebase',
+      data: {'id_token': idToken},
       options: Options(headers: {'Content-Type': 'application/json'}),
     );
 
@@ -101,6 +104,27 @@ class AuthService {
     await _firebaseAuth.signOut();
     await _googleSignIn.signOut();
     await clearStoredBackendToken();
+  }
+
+  Future<void> _ensureGoogleSignInInitialized() {
+    final existing = _googleSignInInitialization;
+    if (existing != null) {
+      return existing;
+    }
+
+    // Must be the Web OAuth client (client_type 3 in google-services.json), not
+    // the Android client — otherwise Android returns "Developer console is not
+    // set up correctly" when requesting an ID token for Firebase.
+    final rawClientId = Env.googleOAuthClientId.trim();
+    final serverClientId = rawClientId.isNotEmpty
+        ? rawClientId
+        : '700456212189-qrr31phd4ih8of5ujq1vp0akeo6q26qj.apps.googleusercontent.com';
+
+    final initFuture = _googleSignIn.initialize(
+      serverClientId: serverClientId,
+    );
+    _googleSignInInitialization = initFuture;
+    return initFuture;
   }
 
   DateTime _resolveExpiry(Map<String, dynamic> data, String tokenValue) {
