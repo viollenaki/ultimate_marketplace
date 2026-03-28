@@ -8,10 +8,9 @@ class AppException implements Exception {
 }
 
 class NetworkException extends AppException {
-  NetworkException([String message = 'Network request failed'])
-    : super(message);
+  NetworkException([super.message = 'Network request failed']);
 }
 
 class ValidationException extends AppException {
-  ValidationException([String message = 'Validation failed']) : super(message);
+  ValidationException([super.message = 'Validation failed']);
 }
