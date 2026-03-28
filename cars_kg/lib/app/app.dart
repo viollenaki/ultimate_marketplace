@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/constants/app_colors.dart';
-import '../core/constants/app_strings.dart';
-import '../core/constants/app_styles.dart';
-import 'routes.dart';
+import '../core/localization/app_localizations.dart';
+import '../core/theme/app_theme.dart';
+import 'router.dart';
 
-class UltimateMarketplaceApp extends StatelessWidget {
+class UltimateMarketplaceApp extends ConsumerWidget {
   const UltimateMarketplaceApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: AppStrings.appName,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.background,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        textTheme: AppStyles.textTheme,
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      initialRoute: AppRoutes.login,
-      routes: AppRoutes.routes,
+      title: 'Ultimate Marketplace',
+      theme: AppTheme.lightTheme,
+      routerConfig: router,
+      locale: const Locale('en'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
     );
   }
 }
