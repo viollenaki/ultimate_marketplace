@@ -1,15 +1,29 @@
 """
 Database connection and session management.
 """
+import asyncio
 import logging
+from pathlib import Path
 from typing import AsyncGenerator
 
+from alembic import command
+from alembic.config import Config
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _alembic_config() -> Config:
+    backend_root = Path(__file__).resolve().parents[2]
+    return Config(str(backend_root / "alembic.ini"))
+
+
+def run_alembic_upgrade() -> None:
+    """Apply migrations to head (sync PyMySQL; safe if already up to date)."""
+    command.upgrade(_alembic_config(), "head")
 
 _engine_kwargs: dict = {
     "echo": False,
@@ -46,12 +60,13 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    """Initialize database connection."""
+    """Run Alembic migrations, then verify async DB connectivity."""
     try:
-        # Test database connection
+        await asyncio.to_thread(run_alembic_upgrade)
+        logger.info("Database migrations applied (Alembic upgrade head)")
         async with engine.begin() as conn:
             await conn.run_sync(lambda _: None)
         logger.info("Database connection established")
     except Exception as e:
-        logger.error(f"Database connection failed: {e}")
+        logger.error(f"Database initialization failed: {e}")
         raise
