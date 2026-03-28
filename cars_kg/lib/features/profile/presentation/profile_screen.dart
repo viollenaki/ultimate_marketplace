@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_palette.dart';
 import '../../../data/mock/mock_data.dart';
+import '../../auth/presentation/providers/auth_providers.dart';
 import '../../../shared/widgets/marketplace_bottom_nav.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile & Settings')),
       body: ListView(
@@ -62,7 +64,12 @@ class ProfileScreen extends StatelessWidget {
           _settingTile(
             Icons.logout,
             'Log out',
-            () => context.go('/login'),
+            () async {
+              await ref.read(authControllerProvider.notifier).signOut();
+              if (context.mounted) {
+                context.go('/home');
+              }
+            },
             color: AppPalette.error,
           ),
         ],

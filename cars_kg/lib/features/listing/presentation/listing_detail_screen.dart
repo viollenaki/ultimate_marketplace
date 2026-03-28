@@ -7,6 +7,8 @@ import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_palette.dart';
 import '../../../data/mock/mock_providers.dart';
 import '../../../shared/widgets/app_snackbar.dart';
+import '../../../shared/widgets/auth_required_dialog.dart';
+import '../../auth/presentation/providers/auth_providers.dart';
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
   const ListingDetailScreen({super.key, required this.listingId});
@@ -25,6 +27,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final listing = ref.watch(listingByIdProvider(widget.listingId));
+    final authState = ref.watch(authControllerProvider);
 
     if (listing == null) {
       return Scaffold(
@@ -165,25 +168,43 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () => showNotReadySnackBar(
-                            context,
-                            l10n.t('chatLater'),
-                          ),
+                          onPressed: () async {
+                            if (!authState.isAuthenticated) {
+                              await showAuthRequiredDialog(context);
+                              return;
+                            }
+                            if (context.mounted) {
+                              showNotReadySnackBar(context, l10n.t('chatLater'));
+                            }
+                          },
                           icon: const Icon(Icons.chat_bubble_outline),
                           label: Text(l10n.t('message')),
                         ),
                       ),
                       const SizedBox(width: 10),
                       OutlinedButton(
-                        onPressed: () => showNotReadySnackBar(
-                          context,
-                          'Promotions integration soon',
-                        ),
+                        onPressed: () async {
+                          if (!authState.isAuthenticated) {
+                            await showAuthRequiredDialog(context);
+                            return;
+                          }
+                          if (context.mounted) {
+                            showNotReadySnackBar(context, 'Promotions integration soon');
+                          }
+                        },
                         child: Text(l10n.t('promote')),
                       ),
                       const SizedBox(width: 10),
                       IconButton.outlined(
-                        onPressed: () {},
+                        onPressed: () async {
+                          if (!authState.isAuthenticated) {
+                            await showAuthRequiredDialog(context);
+                            return;
+                          }
+                          if (context.mounted) {
+                            showNotReadySnackBar(context, 'Favorites sync is next');
+                          }
+                        },
                         icon: const Icon(Icons.favorite_border),
                       ),
                     ],
