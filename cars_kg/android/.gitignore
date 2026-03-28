@@ -13,4 +13,3 @@ key.properties
 **/*.keystore
 **/*.jks
 
-/app/src/google-services.json
