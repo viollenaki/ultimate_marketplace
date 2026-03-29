@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/mock/mock_data.dart';
 import '../../../../data/mock/mock_models.dart';
+import '../../../favorites/presentation/favorites_providers.dart';
 import '../../data/listing_from_api.dart';
 import 'listing_api_providers.dart';
 
@@ -22,6 +23,11 @@ final myRemoteListingsProvider =
 final remoteListingProvider =
     FutureProvider.autoDispose.family<Listing, int>((ref, id) async {
   final api = ref.watch(listingApiServiceProvider);
+  final favAsync = ref.watch(favoriteListingIdsProvider);
+  final favSet = favAsync.maybeWhen(
+    data: (s) => s,
+    orElse: () => <int>{},
+  );
   final j = await api.getListing(id);
-  return listingFromApiJson(j);
+  return listingFromApiJson(j, isFavorite: favSet.contains(id));
 });

@@ -10,6 +10,7 @@ import '../../../data/mock/mock_providers.dart';
 import '../../../shared/widgets/app_snackbar.dart';
 import '../../../shared/widgets/auth_required_dialog.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
+import '../../favorites/presentation/favorite_optimistic_notifier.dart';
 import 'providers/remote_listing_provider.dart';
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
@@ -33,6 +34,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
 
     if (numericId != null) {
       final asyncListing = ref.watch(remoteListingProvider(numericId));
+      final favoriteOverrides = ref.watch(favoriteOptimisticNotifierProvider);
       return asyncListing.when(
         loading: () => Scaffold(
           appBar: AppBar(),
@@ -56,6 +58,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           listing.longitude,
           listing.locationDisplayName,
           listing.location,
+          favoriteListing: listing,
+          favoriteApiId: numericId,
+          isFavorite: FavoriteOptimisticNotifier.effectiveFavorite(
+            favoriteOverrides,
+            listing,
+          ),
         ),
       );
     }
@@ -88,6 +96,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       listing.locationDisplayName,
       listing.location,
       priceFormatter: price,
+      favoriteListing: listing,
+      favoriteApiId: null,
+      isFavorite: listing.isFavorite,
     );
   }
 
@@ -106,6 +117,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     String? locationDisplayName,
     String cityLabel, {
     NumberFormat? priceFormatter,
+    Listing? favoriteListing,
+    int? favoriteApiId,
+    required bool isFavorite,
   }) {
     final priceFmt = priceFormatter ??
         NumberFormat.currency(symbol: currency, decimalDigits: 0);
@@ -127,8 +141,20 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             expandedHeight: 300,
             actions: [
               IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.favorite_border),
+                onPressed: favoriteApiId == null || favoriteListing == null
+                    ? () {
+                        showNotReadySnackBar(
+                          context,
+                          'Favorites use the API; turn off demo data.',
+                        );
+                      }
+                    : () => ref
+                        .read(favoriteOptimisticNotifierProvider.notifier)
+                        .requestToggle(favoriteListing, context),
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.redAccent : null,
+                ),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -309,19 +335,20 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       ),
                       const SizedBox(width: 10),
                       IconButton.outlined(
-                        onPressed: () async {
-                          if (!authState.isAuthenticated) {
-                            await showAuthRequiredDialog(context);
-                            return;
-                          }
-                          if (context.mounted) {
-                            showNotReadySnackBar(
-                              context,
-                              'Favorites sync is next',
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.favorite_border),
+                        onPressed: favoriteApiId == null || favoriteListing == null
+                            ? () {
+                                showNotReadySnackBar(
+                                  context,
+                                  'Favorites use the API; turn off demo data.',
+                                );
+                              }
+                            : () => ref
+                                .read(favoriteOptimisticNotifierProvider.notifier)
+                                .requestToggle(favoriteListing, context),
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorite ? Colors.redAccent : null,
+                        ),
                       ),
                     ],
                   ),

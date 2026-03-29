@@ -22,7 +22,6 @@ class Listing {
     required this.currency,
     required this.location,
     required this.imageUrls,
-    required this.category,
     required this.isFavorite,
     required this.owner,
     required this.createdAt,
@@ -52,8 +51,6 @@ class Listing {
   final String currency;
   final String location;
   final List<String> imageUrls;
-  /// Browse bucket: "All", "New cars", "Used", "Parts", etc.
-  final String category;
   final bool isFavorite;
   final MarketplaceUser owner;
   final DateTime createdAt;
@@ -74,27 +71,74 @@ class Listing {
   final double? latitude;
   final double? longitude;
   final String? locationDisplayName;
-}
 
-class CarBrowseCategory {
-  const CarBrowseCategory({
-    required this.id,
-    required this.titleKey,
-    required this.imageUrl,
-    required this.listingCount,
-  });
-
-  final String id;
-  final String titleKey;
-  final String imageUrl;
-  final int listingCount;
+  Listing copyWith({
+    String? id,
+    String? title,
+    String? description,
+    double? price,
+    String? currency,
+    String? location,
+    List<String>? imageUrls,
+    bool? isFavorite,
+    MarketplaceUser? owner,
+    DateTime? createdAt,
+    String? brand,
+    String? model,
+    int? year,
+    int? mileage,
+    String? fuelType,
+    String? transmission,
+    String? bodyType,
+    String? exteriorColor,
+    String? interiorColor,
+    bool? isVip,
+    double? priceUsdApprox,
+    bool? isCrashed,
+    bool? openToTrade,
+    bool? sellerIsDealer,
+    double? latitude,
+    double? longitude,
+    String? locationDisplayName,
+  }) {
+    return Listing(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      currency: currency ?? this.currency,
+      location: location ?? this.location,
+      imageUrls: imageUrls ?? this.imageUrls,
+      isFavorite: isFavorite ?? this.isFavorite,
+      owner: owner ?? this.owner,
+      createdAt: createdAt ?? this.createdAt,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
+      year: year ?? this.year,
+      mileage: mileage ?? this.mileage,
+      fuelType: fuelType ?? this.fuelType,
+      transmission: transmission ?? this.transmission,
+      bodyType: bodyType ?? this.bodyType,
+      exteriorColor: exteriorColor ?? this.exteriorColor,
+      interiorColor: interiorColor ?? this.interiorColor,
+      isVip: isVip ?? this.isVip,
+      priceUsdApprox: priceUsdApprox ?? this.priceUsdApprox,
+      isCrashed: isCrashed ?? this.isCrashed,
+      openToTrade: openToTrade ?? this.openToTrade,
+      sellerIsDealer: sellerIsDealer ?? this.sellerIsDealer,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      locationDisplayName: locationDisplayName ?? this.locationDisplayName,
+    );
+  }
 }
 
 class PopularBrand {
-  const PopularBrand({required this.name, this.logoUrl});
+  const PopularBrand({required this.name, this.logoAsset});
 
   final String name;
-  final String? logoUrl;
+  /// Flutter asset path (e.g. `assets/car_logos/bmw.png`).
+  final String? logoAsset;
 }
 
 class ConversationPreview {

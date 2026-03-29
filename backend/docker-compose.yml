@@ -10,6 +10,7 @@ services:
     - CELERY_BROKER_URL=${CELERY_BROKER_URL}
     - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
     - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
+    - API_V1_STR=${API_V1_STR:-/api/v1}
     depends_on:
       db:
         condition: service_healthy

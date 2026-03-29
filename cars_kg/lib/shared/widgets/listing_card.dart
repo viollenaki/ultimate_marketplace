@@ -9,11 +9,14 @@ class ListingCard extends StatelessWidget {
     super.key,
     required this.listing,
     required this.onTap,
+    this.onFavoritePressed,
     this.isCompact = false,
   });
 
   final Listing listing;
   final VoidCallback onTap;
+  /// When null, the heart is display-only.
+  final VoidCallback? onFavoritePressed;
   final bool isCompact;
 
   @override
@@ -97,19 +100,29 @@ class ListingCard extends StatelessWidget {
                     ),
                   ),
                 Positioned(
-                  top: 10,
-                  right: 10,
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: Colors.white.withValues(alpha: 0.92),
-                    child: Icon(
-                      listing.isFavorite
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color: listing.isFavorite
-                          ? AppPalette.error
-                          : AppPalette.textSecondary,
-                      size: 18,
+                  top: 4,
+                  right: 4,
+                  child: Material(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      onPressed: onFavoritePressed,
+                      icon: Icon(
+                        listing.isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: listing.isFavorite
+                            ? AppPalette.error
+                            : AppPalette.textSecondary,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),

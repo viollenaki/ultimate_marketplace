@@ -7,9 +7,18 @@ import '../../../core/theme/app_palette.dart';
 import '../../../data/mock/mock_data.dart';
 import '../domain/car_filters_state.dart';
 import 'car_filters_provider.dart';
+import 'home_feed_notifier.dart';
 
 const _kFuels = ['Gasoline', 'Diesel', 'Hybrid', 'Electric', 'LPG'];
-const _kBodies = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Wagon'];
+const _kBodies = [
+  'Sedan',
+  'SUV',
+  'Hatchback',
+  'Coupe',
+  'Wagon',
+  'Pickup',
+  'Minivan',
+];
 const _kTransmissions = ['Automatic', 'Manual', 'Tiptronic'];
 const _kExtColors = ['White', 'Black', 'Silver', 'Gray', 'Blue', 'Red'];
 const _kIntColors = ['Black', 'Beige', 'Gray', 'Brown'];
@@ -72,6 +81,7 @@ class _CarFiltersScreenState extends ConsumerState<CarFiltersScreen> {
     ref.read(carFiltersProvider.notifier).replace(
           CarFiltersState(
             brands: _draft.brands,
+            city: _draft.city,
             minPrice: _parseDoubleField(_minPrice.text),
             maxPrice: _parseDoubleField(_maxPrice.text),
             minYear: _parseIntField(_minYear.text),
@@ -89,11 +99,13 @@ class _CarFiltersScreenState extends ConsumerState<CarFiltersScreen> {
             sellerType: _draft.sellerType,
           ),
         );
-    context.pop();
+    ref.read(homeFeedProvider.notifier).refresh();
+    if (context.mounted) context.pop();
   }
 
   void _resetAll() {
     ref.read(carFiltersProvider.notifier).reset();
+    ref.read(homeFeedProvider.notifier).refresh();
     setState(() {
       _draft = CarFiltersState.initial;
       _minPrice.clear();
@@ -137,6 +149,35 @@ class _CarFiltersScreenState extends ConsumerState<CarFiltersScreen> {
           Expanded(
             child: ListView(
               children: [
+                _sectionExpansion(
+                  title: l10n.t('filterCity'),
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: l10n.t('filterCity'),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String?>(
+                        isExpanded: true,
+                        value: _draft.city,
+                        hint: Text(l10n.t('filterCityAny')),
+                        items: [
+                          DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text(l10n.t('filterCityAny')),
+                          ),
+                          ...kMajorKgCities.map(
+                            (c) => DropdownMenuItem<String?>(
+                              value: c,
+                              child: Text(c),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) =>
+                            setState(() => _draft = _draft.copyWith(city: v)),
+                      ),
+                    ),
+                  ),
+                ),
                 _sectionExpansion(
                   title: l10n.t('filterMakeModels'),
                   child: Wrap(

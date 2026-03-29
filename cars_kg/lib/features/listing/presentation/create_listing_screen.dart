@@ -27,9 +27,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   final _yearController = TextEditingController(text: '2020');
   final _mileageController = TextEditingController(text: '0');
 
-  List<Map<String, dynamic>> _categories = [];
-  int? _categoryId;
-  bool _loadingCategories = true;
   bool _submitting = false;
 
   double? _pickedLat;
@@ -37,35 +34,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   String? _pickedDisplayName;
 
   final List<XFile> _photos = [];
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCategories());
-  }
-
-  Future<void> _loadCategories() async {
-    try {
-      final api = ref.read(listingApiServiceProvider);
-      final list = await api.fetchCategories();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _categories = list;
-        _loadingCategories = false;
-        if (_categoryId == null && list.isNotEmpty) {
-          _categoryId = (list.first['id'] as num).toInt();
-        }
-      });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _loadingCategories = false);
-      showNotReadySnackBar(context, 'Could not load categories: $e');
-    }
-  }
 
   @override
   void dispose() {
@@ -149,13 +117,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       showNotReadySnackBar(context, 'Enter year and mileage');
       return;
     }
-    if (_categoryId == null) {
-      showNotReadySnackBar(context, 'Choose a category');
-      return;
-    }
 
     final body = <String, dynamic>{
-      'category_id': _categoryId,
       'title': title,
       'description': description,
       'price': price,
@@ -237,25 +200,6 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(labelText: 'Price (KGS) *'),
             ),
-            const SizedBox(height: 12),
-            if (_loadingCategories)
-              const LinearProgressIndicator()
-            else
-              DropdownButtonFormField<int>(
-                // Controlled selection; `value` still required until FormField API stabilizes.
-                // ignore: deprecated_member_use
-                value: _categoryId,
-                decoration: const InputDecoration(labelText: 'Category *'),
-                items: _categories
-                    .map(
-                      (c) => DropdownMenuItem<int>(
-                        value: (c['id'] as num).toInt(),
-                        child: Text(c['name'] as String? ?? ''),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => _categoryId = v),
-              ),
             const SizedBox(height: 12),
             TextField(
               controller: _brandController,

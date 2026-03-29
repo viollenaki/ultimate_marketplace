@@ -26,14 +26,42 @@ class ListingApiService {
     return e.message ?? 'Request failed';
   }
 
-  Future<List<Map<String, dynamic>>> fetchCategories() async {
+  Future<List<int>> fetchFavoriteListingIds() async {
     try {
-      final r = await _client.get<dynamic>('/categories');
+      final r = await _client.get<Map<String, dynamic>>('/favorites/ids');
+      final data = r.data;
+      if (data == null) return [];
+      final raw = data['listing_ids'] as List<dynamic>? ?? [];
+      return raw.map((e) => (e as num).toInt()).toList();
+    } on DioException catch (e) {
+      throw ListingApiException(_errorFromDio(e), statusCode: e.response?.statusCode);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchFavoriteListings() async {
+    try {
+      final r = await _client.get<dynamic>('/favorites');
       final data = r.data;
       if (data is! List) {
         return [];
       }
       return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } on DioException catch (e) {
+      throw ListingApiException(_errorFromDio(e), statusCode: e.response?.statusCode);
+    }
+  }
+
+  Future<void> addFavorite(int listingId) async {
+    try {
+      await _client.postEmpty('/favorites/$listingId');
+    } on DioException catch (e) {
+      throw ListingApiException(_errorFromDio(e), statusCode: e.response?.statusCode);
+    }
+  }
+
+  Future<void> removeFavorite(int listingId) async {
+    try {
+      await _client.deletePath('/favorites/$listingId');
     } on DioException catch (e) {
       throw ListingApiException(_errorFromDio(e), statusCode: e.response?.statusCode);
     }

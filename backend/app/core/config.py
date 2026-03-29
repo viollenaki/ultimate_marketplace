@@ -6,7 +6,7 @@ import os
 import secrets
 from typing import List
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,8 +15,21 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
-    # API settings
+    # API settings (include_router prefix). Empty .env value would mount routes at /listings/...
+    # while clients call /api/v1/listings/... → 404.
     API_V1_STR: str = "/api/v1"
+
+    @field_validator("API_V1_STR", mode="before")
+    @classmethod
+    def _normalize_api_v1_str(cls, v: object) -> str:
+        if v is None:
+            return "/api/v1"
+        s = str(v).strip()
+        if not s:
+            return "/api/v1"
+        if not s.startswith("/"):
+            s = f"/{s}"
+        return s.rstrip("/") or "/api/v1"
     SECRET_KEY: str = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
 
     # CORS: load as string from .env (comma-separated or JSON array), expose as list
@@ -51,6 +64,10 @@ class Settings(BaseSettings):
     # Elasticsearch (Docker: http://elasticsearch:9200; host machine: http://127.0.0.1:9200)
     ELASTICSEARCH_URL: str = Field(
         default="http://elasticsearch:9200",
+    )
+    ELASTICSEARCH_LISTINGS_INDEX: str = Field(
+        default="marketplace_listings",
+        description="Index name for listing search / filters",
     )
 
     # Firebase Admin (service account JSON path, relative to cwd or absolute)

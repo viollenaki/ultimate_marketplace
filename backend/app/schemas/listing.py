@@ -3,16 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.media import ListingMediaResponse
 
 
-class CategoryBrief(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    slug: str
-
-
 class ListingCreate(BaseModel):
-    category_id: int = Field(..., ge=1)
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., min_length=1)
     price: float = Field(..., gt=0)
@@ -38,7 +29,6 @@ class ListingCreate(BaseModel):
 
 
 class ListingUpdate(BaseModel):
-    category_id: int | None = Field(default=None, ge=1)
     title: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, min_length=1)
     price: float | None = Field(default=None, gt=0)
@@ -68,8 +58,6 @@ class ListingResponse(BaseModel):
 
     id: int
     owner_id: int
-    category_id: int
-    category: CategoryBrief
     title: str
     description: str
     price: float
@@ -100,3 +88,12 @@ class ListingResponse(BaseModel):
     @classmethod
     def _default_media(cls, v: object) -> object:
         return v if v is not None else []
+
+
+class ListingListResponse(BaseModel):
+    items: list[ListingResponse]
+    total: int
+
+
+class FavoriteListingIdsResponse(BaseModel):
+    listing_ids: list[int]

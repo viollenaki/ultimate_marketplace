@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -15,31 +13,7 @@ bool mockMode(Ref ref) => useMockData;
 
 final mockModeProvider = Provider<bool>((ref) => mockMode(ref));
 
-final homeFeedStateProvider = StateProvider<DemoLoadState>(
-  (ref) => DemoLoadState.data,
-);
-final homeFeedPageProvider = StateProvider<int>((ref) => 1);
 final homeFeedIsGridProvider = StateProvider<bool>((ref) => true);
-
-final homeListingsProvider = FutureProvider<List<Listing>>((ref) async {
-  final enabled = ref.watch(mockModeProvider);
-  if (!enabled) {
-    return [];
-  }
-
-  await Future<void>.delayed(const Duration(milliseconds: 650));
-  final state = ref.watch(homeFeedStateProvider);
-  if (state == DemoLoadState.error) {
-    throw Exception('Mock loading error');
-  }
-  if (state == DemoLoadState.empty) {
-    return [];
-  }
-
-  final page = ref.watch(homeFeedPageProvider);
-  final count = min(page * 8, mockListings.length);
-  return mockListings.take(count).toList();
-});
 
 final listingByIdProvider = Provider.family<Listing?, String>((ref, id) {
   for (final item in mockListings) {

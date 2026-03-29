@@ -1,9 +1,20 @@
 import '../../../data/mock/mock_models.dart';
 
-/// Active vehicle filters (client-side until search API exists).
+/// Cities aligned with backend listing `city` values (exact match for API).
+const kMajorKgCities = [
+  'Bishkek',
+  'Osh',
+  'Jalal-Abad',
+  'Karakol',
+  'Tokmok',
+  'Naryn',
+];
+
+/// Active vehicle filters (synced to `GET /listings` when not in mock mode).
 class CarFiltersState {
   const CarFiltersState({
     this.brands = const {},
+    this.city,
     this.minPrice,
     this.maxPrice,
     this.minYear,
@@ -22,6 +33,8 @@ class CarFiltersState {
   });
 
   final Set<String> brands;
+  /// Exact city name (same as API `city`); null = any.
+  final String? city;
   final double? minPrice;
   final double? maxPrice;
   final int? minYear;
@@ -42,6 +55,7 @@ class CarFiltersState {
 
   bool get hasAnyFilter =>
       brands.isNotEmpty ||
+      (city != null && city!.trim().isNotEmpty) ||
       minPrice != null ||
       maxPrice != null ||
       minYear != null ||
@@ -60,6 +74,7 @@ class CarFiltersState {
 
   CarFiltersState copyWith({
     Set<String>? brands,
+    String? city,
     double? minPrice,
     double? maxPrice,
     int? minYear,
@@ -75,6 +90,7 @@ class CarFiltersState {
     double? maxDistanceKm,
     bool? openToTradeOnly,
     SellerFilterType? sellerType,
+    bool clearCity = false,
     bool clearMinPrice = false,
     bool clearMaxPrice = false,
     bool clearMinYear = false,
@@ -85,6 +101,7 @@ class CarFiltersState {
   }) {
     return CarFiltersState(
       brands: brands ?? this.brands,
+      city: clearCity ? null : (city ?? this.city),
       minPrice: clearMinPrice ? null : (minPrice ?? this.minPrice),
       maxPrice: clearMaxPrice ? null : (maxPrice ?? this.maxPrice),
       minYear: clearMinYear ? null : (minYear ?? this.minYear),
@@ -109,6 +126,9 @@ enum SellerFilterType { any, owner, dealer }
 bool listingMatchesFilters(Listing listing, CarFiltersState s) {
   if (s.brands.isNotEmpty && !s.brands.contains(listing.brand)) {
     return false;
+  }
+  if (s.city != null && s.city!.trim().isNotEmpty) {
+    if (listing.location.trim() != s.city!.trim()) return false;
   }
   if (s.minPrice != null && listing.price < s.minPrice!) return false;
   if (s.maxPrice != null && listing.price > s.maxPrice!) return false;

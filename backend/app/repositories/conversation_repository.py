@@ -1,4 +1,4 @@
-from sqlalchemy import or_, select
+from sqlalchemy import case, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Conversation
@@ -50,7 +50,8 @@ class ConversationRepository:
                 )
             )
             .order_by(
-                Conversation.last_message_at.desc().nulls_last(),
+                case((Conversation.last_message_at.is_(None), 1), else_=0).asc(),
+                Conversation.last_message_at.desc(),
                 Conversation.id.desc(),
             )
             .limit(limit)

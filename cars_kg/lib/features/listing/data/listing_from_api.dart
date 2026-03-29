@@ -3,13 +3,13 @@ import '../../../data/mock/mock_models.dart';
 Listing listingFromApiJson(
   Map<String, dynamic> j, {
   MarketplaceUser? ownerOverride,
+  bool isFavorite = false,
 }) {
   final media = j['media'] as List<dynamic>? ?? [];
   final urls = media
-      .map((e) => (e as Map<String, dynamic>)['file_url'] as String)
+      .map((e) => (e as Map<String, dynamic>)['file_url'] as String?)
+      .whereType<String>()
       .toList();
-  final cat = j['category'] as Map<String, dynamic>?;
-  final catName = cat?['name'] as String? ?? '';
   final ownerId = '${j['owner_id']}';
   final owner = ownerOverride ??
       MarketplaceUser(
@@ -27,8 +27,7 @@ Listing listingFromApiJson(
     currency: j['currency'] as String? ?? 'KGS',
     location: j['city'] as String,
     imageUrls: urls,
-    category: catName,
-    isFavorite: false,
+    isFavorite: isFavorite,
     owner: owner,
     createdAt: DateTime.now(),
     brand: j['brand'] as String? ?? '',

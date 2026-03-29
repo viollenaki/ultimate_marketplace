@@ -21,7 +21,6 @@ class Listing(BaseModel):
     __tablename__ = "listings"
 
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False, index=True)
 
     title = Column(String(200), nullable=False, index=True)
     description = Column(Text, nullable=False)
@@ -58,7 +57,6 @@ class Listing(BaseModel):
     additional_attributes = Column(JSON, nullable=True)
 
     owner = relationship("User", back_populates="listings")
-    category = relationship("Category")
     media = relationship(
         "ListingMedia", back_populates="listing", cascade="all, delete-orphan"
     )

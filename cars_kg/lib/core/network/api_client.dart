@@ -58,6 +58,15 @@ class ApiClient {
     );
   }
 
+  /// POST with no body (e.g. `/favorites/{id}`).
+  Future<Response<void>> postEmpty(String path) {
+    return dio.post<void>(path);
+  }
+
+  Future<Response<void>> deletePath(String path) {
+    return dio.delete<void>(path);
+  }
+
   Future<Response<dynamic>> postMultipart(
     String path, {
     required FormData data,

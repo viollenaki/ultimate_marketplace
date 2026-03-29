@@ -31,41 +31,31 @@ final mockUsers = [
   ),
 ];
 
-/// Home carousel buckets (not 1:1 with DB category_id; UI grouping).
-final mockCarBrowseCategories = [
-  CarBrowseCategory(
-    id: 'sales',
-    titleKey: 'catCarSales',
-    imageUrl: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&q=80',
-    listingCount: 59131,
-  ),
-  CarBrowseCategory(
-    id: 'parts',
-    titleKey: 'catAutoParts',
-    imageUrl: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400&q=80',
-    listingCount: 197068,
-  ),
-  CarBrowseCategory(
-    id: 'tuning',
-    titleKey: 'catAccessories',
-    imageUrl: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&q=80',
-    listingCount: 31544,
-  ),
-  CarBrowseCategory(
-    id: 'used',
-    titleKey: 'catUsedCars',
-    imageUrl: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&q=80',
-    listingCount: 42102,
-  ),
-];
-
 final mockPopularBrands = [
-  const PopularBrand(name: 'Hyundai'),
-  const PopularBrand(name: 'Lexus'),
-  const PopularBrand(name: 'Kia'),
-  const PopularBrand(name: 'Toyota'),
-  const PopularBrand(name: 'BMW'),
-  const PopularBrand(name: 'Mercedes-Benz'),
+  const PopularBrand(
+    name: 'Hyundai',
+    logoAsset: 'assets/car_logos/hyudai.png',
+  ),
+  const PopularBrand(
+    name: 'Lexus',
+    logoAsset: 'assets/car_logos/lexus.png',
+  ),
+  const PopularBrand(
+    name: 'Kia',
+    logoAsset: 'assets/car_logos/kia.png',
+  ),
+  const PopularBrand(
+    name: 'Toyota',
+    logoAsset: 'assets/car_logos/toyota.png',
+  ),
+  const PopularBrand(
+    name: 'BMW',
+    logoAsset: 'assets/car_logos/bmw.png',
+  ),
+  const PopularBrand(
+    name: 'Mercedes-Benz',
+    logoAsset: 'assets/car_logos/mercedes.png',
+  ),
 ];
 
 /// Distinct brands in mock inventory (filters screen).
@@ -100,8 +90,6 @@ const _transmissions = ['Automatic', 'Manual', 'Tiptronic'];
 const _bodies = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Wagon'];
 const _extColors = ['White', 'Black', 'Silver', 'Gray', 'Blue', 'Red'];
 const _intColors = ['Black', 'Beige', 'Gray', 'Brown'];
-const _browseCats = ['All', 'New cars', 'Used', 'Parts', 'Rent'];
-
 final mockListings = List.generate(24, (index) {
   final owner = mockUsers[(index % (mockUsers.length - 1)) + 1];
   final pair = _pairs[index % _pairs.length];
@@ -127,7 +115,6 @@ final mockListings = List.generate(24, (index) {
       'https://picsum.photos/seed/car_$index/800/600',
       'https://picsum.photos/seed/car_${index + 50}/800/600',
     ],
-    category: _browseCats[index % _browseCats.length],
     isFavorite: index % 3 == 0,
     owner: owner,
     createdAt: DateTime.now().subtract(Duration(hours: 3 * (index + 1))),

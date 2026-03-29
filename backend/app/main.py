@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.elasticsearch_client import close_async_elasticsearch, get_async_elasticsearch
+from app.services.listing_search_service import ensure_listings_index_async
 from app.core.request_log_middleware import RequestLogMiddleware
 from app.db.database import init_db
 
@@ -48,6 +49,13 @@ def create_application() -> FastAPI:
     # Include API router
     application.include_router(api_router, prefix=settings.API_V1_STR)
 
+    fav_paths = [
+        getattr(r, "path", "")
+        for r in application.routes
+        if "favorite" in getattr(r, "path", "")
+    ]
+    logger.info("Routes under %s containing 'favorite': %s", settings.API_V1_STR, fav_paths)
+
     @application.exception_handler(HTTPException)
     async def http_exception_handler(_request, exc: HTTPException):
         detail = exc.detail
@@ -67,12 +75,30 @@ def create_application() -> FastAPI:
     async def startup_event():
         """Initialize resources on startup."""
         logger.info("Starting up application...")
+        logger.info("REST routes mounted under prefix %r", settings.API_V1_STR)
+        fav_count = sum(
+            1
+            for r in application.routes
+            if getattr(r, "path", "").startswith(f"{settings.API_V1_STR}/favorites")
+        )
+        if fav_count == 0:
+            logger.error(
+                "Startup check: expected /favorites routes under %s — got 0. "
+                "Clients will see 404 on /favorites/*. Rebuild/restart the app container.",
+                settings.API_V1_STR,
+            )
+        else:
+            logger.info("Startup check: %d route(s) under %s/favorites", fav_count, settings.API_V1_STR)
         await init_db()
         es = get_async_elasticsearch()
         if not await es.ping():
             logger.warning("Elasticsearch ping failed; check ELASTICSEARCH_URL")
         else:
             logger.info("Elasticsearch connection OK")
+            try:
+                await ensure_listings_index_async(es)
+            except Exception as e:
+                logger.warning("Could not ensure listings index: %s", e)
     
     @application.on_event("shutdown")
     async def shutdown_event():
