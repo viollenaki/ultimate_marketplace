@@ -87,8 +87,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Password is required';
                     }
-                    if (value.length < 6) {
-                      return 'Password should be at least 6 characters';
+                    if (value.length < 8) {
+                      return 'Password should be at least 8 characters';
                     }
                     return null;
                   },
@@ -160,8 +160,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           .signUpWithEmail(
             email: _emailController.text,
             password: _passwordController.text,
+            fullName: _nameController.text.trim(),
           );
       if (!mounted) {
+        return;
+      }
+      if (!ref.read(authControllerProvider).isAuthenticated) {
         return;
       }
       context.go('/home');

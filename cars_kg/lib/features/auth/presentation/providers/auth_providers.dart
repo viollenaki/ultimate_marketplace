@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_providers.dart';
 import '../../data/datasources/local/auth_secure_storage.dart';
+import '../../data/exceptions/auth_exceptions.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/services/auth_service.dart';
 import '../../domain/entities/backend_auth_token.dart';
@@ -21,6 +24,8 @@ class AuthState {
     this.jwt,
     this.tokenExpiresAt,
     this.userEmail,
+    this.userId,
+    this.firebaseUid,
   });
 
   final bool initialized;
@@ -30,6 +35,8 @@ class AuthState {
   final String? jwt;
   final DateTime? tokenExpiresAt;
   final String? userEmail;
+  final int? userId;
+  final String? firebaseUid;
 
   factory AuthState.initial() => const AuthState(
     initialized: false,
@@ -46,6 +53,8 @@ class AuthState {
     String? jwt,
     DateTime? tokenExpiresAt,
     String? userEmail,
+    int? userId,
+    String? firebaseUid,
   }) {
     return AuthState(
       initialized: initialized ?? this.initialized,
@@ -57,6 +66,8 @@ class AuthState {
       jwt: jwt ?? this.jwt,
       tokenExpiresAt: tokenExpiresAt ?? this.tokenExpiresAt,
       userEmail: userEmail ?? this.userEmail,
+      userId: userId ?? this.userId,
+      firebaseUid: firebaseUid ?? this.firebaseUid,
     );
   }
 }
@@ -70,16 +81,6 @@ final googleSignInProvider = Provider<GoogleSignIn>(
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (ref) => const FlutterSecureStorage(),
 );
-final dioProvider = Provider<Dio>(
-  (ref) => Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 20),
-      sendTimeout: const Duration(seconds: 20),
-    ),
-  ),
-);
-
 final authSecureStorageProvider = Provider<AuthSecureStorage>(
   (ref) => AuthSecureStorage(ref.watch(secureStorageProvider)),
 );
@@ -88,7 +89,7 @@ final authServiceProvider = Provider<AuthService>(
   (ref) => AuthService(
     firebaseAuth: ref.watch(firebaseAuthProvider),
     googleSignIn: ref.watch(googleSignInProvider),
-    dio: ref.watch(dioProvider),
+    apiClient: ref.watch(apiClientProvider),
     secureStorage: ref.watch(authSecureStorageProvider),
   ),
 );
@@ -100,6 +101,23 @@ final authRepositoryProvider = Provider<AuthRepository>(
 final authControllerProvider = NotifierProvider<AuthController, AuthState>(
   AuthController.new,
 );
+
+/// API client that sends `Authorization: Bearer` from [authControllerProvider].
+final authenticatedApiClientProvider = Provider<ApiClient>((ref) {
+  final dio = Dio(ApiClient.baseOptions());
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        final jwt = ref.read(authControllerProvider).jwt;
+        if (jwt != null && jwt.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $jwt';
+        }
+        handler.next(options);
+      },
+    ),
+  );
+  return ApiClient.withDio(dio);
+});
 
 class AuthController extends Notifier<AuthState> {
   late final AuthRepository _repository;
@@ -130,6 +148,8 @@ class AuthController extends Notifier<AuthState> {
       jwt: token.jwt,
       tokenExpiresAt: token.expiresAt,
       userEmail: userEmail,
+      userId: token.userId,
+      firebaseUid: token.firebaseUid,
     );
   }
 
@@ -146,24 +166,24 @@ class AuthController extends Notifier<AuthState> {
       _setAuthenticated(token);
     } catch (error) {
       state = state.copyWith(isLoading: false, errorMessage: _mapError(error));
-      rethrow;
     }
   }
 
   Future<void> signUpWithEmail({
     required String email,
     required String password,
+    required String fullName,
   }) async {
     state = state.copyWith(isLoading: true, clearErrorMessage: true);
     try {
       final token = await _repository.signUpWithEmail(
         email: email,
         password: password,
+        fullName: fullName,
       );
       _setAuthenticated(token);
     } catch (error) {
       state = state.copyWith(isLoading: false, errorMessage: _mapError(error));
-      rethrow;
     }
   }
 
@@ -174,16 +194,20 @@ class AuthController extends Notifier<AuthState> {
       _setAuthenticated(token);
     } catch (error) {
       state = state.copyWith(isLoading: false, errorMessage: _mapError(error));
-      rethrow;
     }
   }
 
   Future<void> signOut() async {
     await _repository.signOut();
-    state = const AuthState(
+    state = AuthState(
       initialized: true,
       isLoading: false,
       isAuthenticated: false,
+      userEmail: null,
+      jwt: null,
+      tokenExpiresAt: null,
+      userId: null,
+      firebaseUid: null,
     );
   }
 
@@ -200,6 +224,8 @@ class AuthController extends Notifier<AuthState> {
       jwt: token.jwt,
       tokenExpiresAt: token.expiresAt,
       userEmail: ref.read(firebaseAuthProvider).currentUser?.email,
+      userId: token.userId,
+      firebaseUid: token.firebaseUid,
     );
   }
 
@@ -217,8 +243,26 @@ class AuthController extends Notifier<AuthState> {
         case 'email-already-in-use':
           return 'Email is already in use';
         case 'weak-password':
-          return 'Password should be at least 6 characters';
+          return 'Password should be at least 8 characters';
+        case 'network-request-failed':
+          return 'Network error; check your connection and try again.';
       }
+      // e.g. [firebase_auth/unknown] ... Connection reset — TLS/TCP to Google dropped
+      final hint = (error.message ?? '').toLowerCase();
+      if (error.code == 'unknown' &&
+          (hint.contains('connection reset') ||
+              hint.contains('connection refused') ||
+              hint.contains('broken pipe') ||
+              hint.contains('timed out') ||
+              hint.contains('failed to connect') ||
+              hint.contains('unable to resolve host'))) {
+        return 'Could not reach Google sign-in (connection was reset). '
+            'Try another Wi-Fi or mobile data, disable VPN, and ensure '
+            'google.com is reachable.';
+      }
+    }
+    if (error is BackendAuthException) {
+      return error.message;
     }
     return error.toString();
   }

@@ -1,8 +1,14 @@
 from pydantic import BaseModel, Field
 
 
-class FirebaseLoginRequest(BaseModel):
+class SessionCreateRequest(BaseModel):
+    """Exchange a Firebase ID token for an API access token."""
+
     id_token: str = Field(..., min_length=1, description="Firebase ID token from client SDK")
+
+
+# Backward-compatible alias for OpenAPI / old clients
+FirebaseLoginRequest = SessionCreateRequest
 
 
 class TokenResponse(BaseModel):
@@ -17,3 +23,4 @@ class CurrentUserResponse(BaseModel):
     full_name: str
     firebase_uid: str | None
     account_status: str
+    profile_image_url: str | None = None

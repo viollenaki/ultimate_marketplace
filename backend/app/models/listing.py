@@ -29,8 +29,11 @@ class Listing(BaseModel):
     currency = Column(String(10), default="KGS")
 
     city = Column(String(100), nullable=False, index=True)
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
+    # WGS-84 decimal degrees; use for map pins and radius / bbox search
+    latitude = Column(Float, nullable=True, index=True)
+    longitude = Column(Float, nullable=True, index=True)
+    # Optional label for the pin (landmark, district, full address snippet)
+    location_display_name = Column(String(255), nullable=True)
 
     brand = Column(String(100), nullable=False, index=True)
     model = Column(String(100), nullable=False, index=True)

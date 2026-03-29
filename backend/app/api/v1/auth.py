@@ -1,26 +1,24 @@
 """
-Authentication: Firebase ID token exchange and session routes.
+Auth: API session (JWT) created from Firebase sign-in.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException
 from app.db.database import get_db
-from app.api.deps.auth import get_current_user
-from app.models import User
-from app.schemas.auth import CurrentUserResponse, FirebaseLoginRequest, TokenResponse
+from app.schemas.auth import SessionCreateRequest, TokenResponse
 from app.services.auth_service import AuthService
 
 router = APIRouter()
 
 
 @router.post(
-    "/login/firebase",
+    "/sessions",
     response_model=TokenResponse,
-    summary="Exchange Firebase ID token for API JWT",
+    summary="Create API session (exchange Firebase ID token for JWT)",
 )
-async def login_with_firebase(
-    body: FirebaseLoginRequest,
+async def create_session(
+    body: SessionCreateRequest,
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     service = AuthService(db)
@@ -33,16 +31,14 @@ async def login_with_firebase(
         ) from None
 
 
-@router.get(
-    "/me",
-    response_model=CurrentUserResponse,
-    summary="Current user (requires Bearer API JWT)",
+@router.post(
+    "/login/firebase",
+    response_model=TokenResponse,
+    summary="[Deprecated] Same as POST /auth/sessions",
+    deprecated=True,
 )
-async def read_me(current_user: User = Depends(get_current_user)) -> CurrentUserResponse:
-    return CurrentUserResponse(
-        id=current_user.id,
-        email=current_user.email,
-        full_name=current_user.full_name,
-        firebase_uid=current_user.firebase_uid,
-        account_status=current_user.account_status,
-    )
+async def login_with_firebase_legacy(
+    body: SessionCreateRequest,
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    return await create_session(body, db)

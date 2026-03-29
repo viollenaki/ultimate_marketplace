@@ -28,6 +28,7 @@ async def health_check():
         HealthResponse: Health check response
     """
     logger.info("GET /health — liveness check")
+    print("GET /health — liveness check")
     return {
         "status": "ok",
         "version": "0.1.0",
@@ -46,6 +47,7 @@ async def db_health_check(db=Depends(get_db)):
         HealthResponse: Health check response
     """
     logger.info("GET /health/db — database session acquired, returning ok")
+    print("GET /health/db — database session acquired, returning ok")
     return {
         "status": "ok",
         "version": "0.1.0",

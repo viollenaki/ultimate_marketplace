@@ -55,6 +55,12 @@ class Settings(BaseSettings):
 
     # Firebase Admin (service account JSON path, relative to cwd or absolute)
     FIREBASE_CREDENTIALS_PATH: str = Field(default="serviceAccountKey.json")
+    # Default bucket id (no gs://). Console: Storage → bucket name, often *.firebasestorage.app
+    FIREBASE_STORAGE_BUCKET: str = Field(
+        default="ultimate-marketplace-f16c9.firebasestorage.app",
+    )
+    # Max listing image upload size (bytes)
+    LISTING_MEDIA_MAX_BYTES: int = Field(default=10 * 1024 * 1024)
 
     # Custom JWT (API access after Firebase login)
     JWT_ALGORITHM: str = Field(default="HS256")

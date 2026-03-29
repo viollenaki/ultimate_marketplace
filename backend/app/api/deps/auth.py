@@ -32,7 +32,14 @@ async def get_current_user(
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise _unauthorized("Not authenticated")
 
-    token = credentials.credentials
+    return await resolve_access_token_user(db, credentials.credentials)
+
+
+async def resolve_access_token_user(db: AsyncSession, token: str) -> User:
+    """
+    Validate JWT and load user (same rules as HTTP Bearer auth).
+    For WebSockets: pass token from query string.
+    """
     try:
         payload = jwt_service.decode_access_token(token)
     except ExpiredSignatureError:

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../data/mock/mock_providers.dart';
 import '../../../shared/widgets/listing_card.dart';
-import '../../../shared/widgets/marketplace_bottom_nav.dart';
 import '../../../shared/widgets/state_views.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -47,9 +46,6 @@ class FavoritesScreen extends ConsumerWidget {
             },
           );
         },
-      ),
-      bottomNavigationBar: MarketplaceBottomNav(
-        currentPath: GoRouterState.of(context).uri.path,
       ),
     );
   }

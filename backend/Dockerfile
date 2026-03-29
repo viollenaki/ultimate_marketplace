@@ -27,8 +27,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
+# FastAPI UploadFile / multipart forms (listing media). Reinstall so stale builder cache cannot omit it.
+RUN pip install --no-cache-dir python-multipart==0.0.20
+
 # Copy application code
 COPY . .
+
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -38,5 +44,7 @@ ENV PYTHONUNBUFFERED=1
 # Expose port
 EXPOSE 8000
 
-# Gunicorn + Uvicorn workers (ASGI)
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "4", "-b", "0.0.0.0:8000", "app.main:app"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
+# Gunicorn + Uvicorn workers (ASGI). Access + error logs to stdout for `docker compose logs`.
+# Migrations run once in entrypoint before workers fork (see docker-compose for celery override).
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "4", "-b", "0.0.0.0:8000", "app.main:app", "--reload"]
