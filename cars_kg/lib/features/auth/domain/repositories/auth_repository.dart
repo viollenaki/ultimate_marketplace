@@ -9,6 +9,7 @@ abstract class AuthRepository {
   Future<BackendAuthToken> signUpWithEmail({
     required String email,
     required String password,
+    required String fullName,
   });
   Future<BackendAuthToken> signInWithGoogle();
   Future<void> signOut();

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_palette.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -31,7 +32,10 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFFF7F2B), AppPalette.primary],
+            colors: [
+              AppPalette.primaryVariant,
+              AppPalette.primary,
+            ],
           ),
         ),
         child: Center(
@@ -53,15 +57,15 @@ class _SplashScreenState extends State<SplashScreen> {
                   ],
                 ),
                 child: const Icon(
-                  Icons.storefront_rounded,
+                  Icons.directions_car_rounded,
                   color: AppPalette.primary,
                   size: 52,
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Ultimate Marketplace',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).t('appName'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
@@ -69,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Buy and sell around you',
+                AppLocalizations.of(context).t('splashTagline'),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.95),
                   fontSize: 14,

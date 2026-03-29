@@ -6,9 +6,10 @@ class NoInternetConnectionException implements Exception {
 }
 
 class BackendAuthException implements Exception {
-  const BackendAuthException(this.message);
+  const BackendAuthException(this.message, {this.httpStatus});
 
   final String message;
+  final int? httpStatus;
 
   @override
   String toString() => message;

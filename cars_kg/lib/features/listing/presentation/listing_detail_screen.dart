@@ -5,10 +5,12 @@ import 'package:intl/intl.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_palette.dart';
+import '../../../data/mock/mock_models.dart';
 import '../../../data/mock/mock_providers.dart';
 import '../../../shared/widgets/app_snackbar.dart';
 import '../../../shared/widgets/auth_required_dialog.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
+import 'providers/remote_listing_provider.dart';
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
   const ListingDetailScreen({super.key, required this.listingId});
@@ -26,9 +28,39 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final listing = ref.watch(listingByIdProvider(widget.listingId));
     final authState = ref.watch(authControllerProvider);
+    final numericId = int.tryParse(widget.listingId);
 
+    if (numericId != null) {
+      final asyncListing = ref.watch(remoteListingProvider(numericId));
+      return asyncListing.when(
+        loading: () => Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, _) => Scaffold(
+          appBar: AppBar(),
+          body: Center(child: Text('Could not load listing\n$e')),
+        ),
+        data: (listing) => _buildScaffold(
+          context,
+          l10n,
+          authState,
+          listing.title,
+          listing.description,
+          listing.price,
+          listing.currency,
+          listing.imageUrls,
+          listing.owner,
+          listing.latitude,
+          listing.longitude,
+          listing.locationDisplayName,
+          listing.location,
+        ),
+      );
+    }
+
+    final listing = ref.watch(listingByIdProvider(widget.listingId));
     if (listing == null) {
       return Scaffold(
         appBar: AppBar(),
@@ -40,6 +72,52 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       symbol: listing.currency,
       decimalDigits: 0,
     );
+
+    return _buildScaffold(
+      context,
+      l10n,
+      authState,
+      listing.title,
+      listing.description,
+      listing.price,
+      listing.currency,
+      listing.imageUrls,
+      listing.owner,
+      listing.latitude,
+      listing.longitude,
+      listing.locationDisplayName,
+      listing.location,
+      priceFormatter: price,
+    );
+  }
+
+  Widget _buildScaffold(
+    BuildContext context,
+    AppLocalizations l10n,
+    AuthState authState,
+    String title,
+    String description,
+    double price,
+    String currency,
+    List<String> imageUrls,
+    MarketplaceUser owner,
+    double? latitude,
+    double? longitude,
+    String? locationDisplayName,
+    String cityLabel, {
+    NumberFormat? priceFormatter,
+  }) {
+    final priceFmt = priceFormatter ??
+        NumberFormat.currency(symbol: currency, decimalDigits: 0);
+
+    final lat = latitude;
+    final lng = longitude;
+    final hasCoords = lat != null && lng != null;
+    final locationLine = locationDisplayName?.isNotEmpty == true
+        ? locationDisplayName!
+        : (hasCoords
+            ? '${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}'
+            : cityLabel);
 
     return Scaffold(
       body: CustomScrollView(
@@ -56,33 +134,46 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 children: [
-                  PageView.builder(
-                    itemCount: listing.imageUrls.length,
-                    onPageChanged: (value) =>
-                        setState(() => _imageIndex = value),
-                    itemBuilder: (context, index) => Image.network(
-                      listing.imageUrls[index],
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Positioned(
-                    right: 16,
-                    bottom: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                  if (imageUrls.isEmpty)
+                    ColoredBox(
+                      color: AppPalette.surface,
+                      child: Center(
+                        child: Icon(
+                          Icons.directions_car_outlined,
+                          size: 72,
+                          color: AppPalette.textSecondary.withValues(alpha: 0.4),
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${_imageIndex + 1}/${listing.imageUrls.length}',
-                        style: const TextStyle(color: Colors.white),
+                    )
+                  else
+                    PageView.builder(
+                      itemCount: imageUrls.length,
+                      onPageChanged: (value) =>
+                          setState(() => _imageIndex = value),
+                      itemBuilder: (context, index) => Image.network(
+                        imageUrls[index],
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  ),
+                  if (imageUrls.isNotEmpty)
+                    Positioned(
+                      right: 16,
+                      bottom: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${_imageIndex + 1}/${imageUrls.length}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -94,20 +185,38 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    listing.title,
+                    title,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    price.format(listing.price),
+                    priceFmt.format(price),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppPalette.primaryVariant,
-                      fontWeight: FontWeight.w800,
-                    ),
+                          color: AppPalette.primaryVariant,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.place_outlined,
+                        size: 18,
+                        color: AppPalette.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          locationLine,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    listing.description,
+                    description,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 18),
@@ -128,9 +237,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       children: [
                         CircleAvatar(
                           radius: 24,
-                          backgroundImage: NetworkImage(
-                            listing.owner.avatarUrl,
-                          ),
+                          backgroundImage: NetworkImage(owner.avatarUrl),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -138,14 +245,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                listing.owner.name,
+                                owner.name,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                listing.owner.city,
+                                owner.city,
                                 style: const TextStyle(
                                   color: AppPalette.textSecondary,
                                 ),

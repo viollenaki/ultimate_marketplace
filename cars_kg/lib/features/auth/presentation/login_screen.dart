@@ -47,7 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to continue exploring thousands of listings.',
+                  'Sign in to save favorites, message sellers, and list your car.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppPalette.textSecondary,
                   ),
@@ -160,11 +160,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Guests can browse listings, but creating chats/favorites/listings requires login.',
+                          'Guests can browse cars; login to chat, save favorites, or sell.',
                           style: TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: TextButton(
+                    onPressed: authState.isLoading
+                        ? null
+                        : () => context.push('/backend-health'),
+                    child: const Text('Backend connectivity check'),
                   ),
                 ),
               ],
@@ -198,6 +207,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) {
         return;
       }
+      if (!ref.read(authControllerProvider).isAuthenticated) {
+        return;
+      }
 
       final target =
           GoRouterState.of(context).uri.queryParameters['from'] ?? '/home';
@@ -220,6 +232,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authControllerProvider.notifier).signInWithGoogle();
       if (!mounted) {
+        return;
+      }
+      if (!ref.read(authControllerProvider).isAuthenticated) {
         return;
       }
 

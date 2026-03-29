@@ -4,9 +4,11 @@ import 'app_palette.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
-    final colorScheme = const ColorScheme.light(
+    final colorScheme = ColorScheme.light(
       primary: AppPalette.primary,
+      onPrimary: Colors.white,
       secondary: AppPalette.secondary,
+      onSecondary: Colors.white,
       error: AppPalette.error,
       surface: AppPalette.surface,
     );
@@ -47,7 +49,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       chipTheme: ChipThemeData(
-        selectedColor: AppPalette.secondary.withValues(alpha: 0.18),
+        selectedColor: AppPalette.primary.withValues(alpha: 0.12),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

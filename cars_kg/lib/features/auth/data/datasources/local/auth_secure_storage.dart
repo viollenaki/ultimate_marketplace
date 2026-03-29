@@ -7,6 +7,8 @@ class AuthSecureStorage {
 
   static const _jwtKey = 'backend_jwt';
   static const _expiryKey = 'backend_jwt_expiry';
+  static const _userIdKey = 'backend_user_id';
+  static const _firebaseUidKey = 'backend_firebase_uid';
 
   final FlutterSecureStorage _storage;
 
@@ -16,6 +18,16 @@ class AuthSecureStorage {
       key: _expiryKey,
       value: token.expiresAt.toUtc().millisecondsSinceEpoch.toString(),
     );
+    if (token.userId != null) {
+      await _storage.write(key: _userIdKey, value: token.userId.toString());
+    } else {
+      await _storage.delete(key: _userIdKey);
+    }
+    if (token.firebaseUid != null && token.firebaseUid!.isNotEmpty) {
+      await _storage.write(key: _firebaseUidKey, value: token.firebaseUid);
+    } else {
+      await _storage.delete(key: _firebaseUidKey);
+    }
   }
 
   Future<BackendAuthToken?> readToken() async {
@@ -32,9 +44,16 @@ class AuthSecureStorage {
       return null;
     }
 
-    final token = BackendAuthToken(
+    final expiresAt = DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true);
+    final storedUserIdRaw = await _storage.read(key: _userIdKey);
+    final storedFirebaseUid = await _storage.read(key: _firebaseUidKey);
+    int? storedUserId = int.tryParse(storedUserIdRaw ?? '');
+
+    final token = BackendAuthToken.fromJwt(
       jwt: jwt,
-      expiresAt: DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true),
+      expiresAt: expiresAt,
+      userId: storedUserId,
+      firebaseUid: storedFirebaseUid,
     );
 
     if (token.isExpired) {
@@ -48,5 +67,7 @@ class AuthSecureStorage {
   Future<void> clear() async {
     await _storage.delete(key: _jwtKey);
     await _storage.delete(key: _expiryKey);
+    await _storage.delete(key: _userIdKey);
+    await _storage.delete(key: _firebaseUidKey);
   }
 }

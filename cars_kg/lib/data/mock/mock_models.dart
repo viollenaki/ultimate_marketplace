@@ -12,6 +12,7 @@ class MarketplaceUser {
   final String city;
 }
 
+/// Vehicle listing (aligned with backend `listings` car fields).
 class Listing {
   const Listing({
     required this.id,
@@ -25,6 +26,23 @@ class Listing {
     required this.isFavorite,
     required this.owner,
     required this.createdAt,
+    required this.brand,
+    required this.model,
+    required this.year,
+    required this.mileage,
+    this.fuelType,
+    this.transmission,
+    this.bodyType,
+    this.exteriorColor,
+    this.interiorColor,
+    this.isVip = false,
+    this.priceUsdApprox,
+    this.isCrashed = false,
+    this.openToTrade = false,
+    this.sellerIsDealer = false,
+    this.latitude,
+    this.longitude,
+    this.locationDisplayName,
   });
 
   final String id;
@@ -34,10 +52,49 @@ class Listing {
   final String currency;
   final String location;
   final List<String> imageUrls;
+  /// Browse bucket: "All", "New cars", "Used", "Parts", etc.
   final String category;
   final bool isFavorite;
   final MarketplaceUser owner;
   final DateTime createdAt;
+  final String brand;
+  final String model;
+  final int year;
+  final int mileage;
+  final String? fuelType;
+  final String? transmission;
+  final String? bodyType;
+  final String? exteriorColor;
+  final String? interiorColor;
+  final bool isVip;
+  final double? priceUsdApprox;
+  final bool isCrashed;
+  final bool openToTrade;
+  final bool sellerIsDealer;
+  final double? latitude;
+  final double? longitude;
+  final String? locationDisplayName;
+}
+
+class CarBrowseCategory {
+  const CarBrowseCategory({
+    required this.id,
+    required this.titleKey,
+    required this.imageUrl,
+    required this.listingCount,
+  });
+
+  final String id;
+  final String titleKey;
+  final String imageUrl;
+  final int listingCount;
+}
+
+class PopularBrand {
+  const PopularBrand({required this.name, this.logoUrl});
+
+  final String name;
+  final String? logoUrl;
 }
 
 class ConversationPreview {

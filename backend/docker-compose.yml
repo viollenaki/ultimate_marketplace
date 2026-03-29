@@ -19,7 +19,7 @@ services:
         condition: service_healthy
   celery_worker:
     build: .
-    command: celery -A tasks.celery_app worker --loglevel=info
+    entrypoint: ["celery", "-A", "tasks.celery_app", "worker", "--loglevel=info"]
     volumes:
     - ./:/app
     environment:
@@ -37,6 +37,9 @@ services:
   db:
     image: mysql:8
     container_name: mysql
+    command:
+    - --character-set-server=utf8mb4
+    - --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_ROOT_PASSWORD: '1234'
       MYSQL_DATABASE: ultimate_marketplace

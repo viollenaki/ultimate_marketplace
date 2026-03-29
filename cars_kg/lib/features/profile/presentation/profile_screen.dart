@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_palette.dart';
 import '../../../data/mock/mock_data.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
-import '../../../shared/widgets/marketplace_bottom_nav.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -58,6 +57,11 @@ class ProfileScreen extends ConsumerWidget {
             () => context.push('/promotions'),
           ),
           _settingTile(Icons.language_outlined, 'Language (EN / RU)', () {}),
+          _settingTile(
+            Icons.cloud_sync_outlined,
+            'Backend health check',
+            () => context.push('/backend-health'),
+          ),
           _settingTile(Icons.notifications_none, 'Notifications', () {}),
           _settingTile(Icons.shield_outlined, 'Privacy', () {}),
           _settingTile(Icons.help_outline, 'Help Center', () {}),
@@ -68,9 +72,6 @@ class ProfileScreen extends ConsumerWidget {
             }
           }, color: AppPalette.error),
         ],
-      ),
-      bottomNavigationBar: MarketplaceBottomNav(
-        currentPath: GoRouterState.of(context).uri.path,
       ),
     );
   }

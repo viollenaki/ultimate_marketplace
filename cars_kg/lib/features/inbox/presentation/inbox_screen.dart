@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/mock/mock_providers.dart';
-import '../../../shared/widgets/marketplace_bottom_nav.dart';
 import '../../../shared/widgets/state_views.dart';
 
 class InboxScreen extends ConsumerWidget {
@@ -107,9 +106,6 @@ class InboxScreen extends ConsumerWidget {
             },
           );
         },
-      ),
-      bottomNavigationBar: MarketplaceBottomNav(
-        currentPath: GoRouterState.of(context).uri.path,
       ),
     );
   }

@@ -10,13 +10,16 @@ from fastapi.responses import JSONResponse
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.elasticsearch_client import close_async_elasticsearch, get_async_elasticsearch
+from app.core.request_log_middleware import RequestLogMiddleware
 from app.db.database import init_db
 
-# Configure logging
+# Configure logging (stdout → visible in `docker compose logs -f app`)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+logging.getLogger("uvicorn.access").setLevel(logging.INFO)
+logging.getLogger("uvicorn.error").setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -39,7 +42,9 @@ def create_application() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+    # Last added = outermost: logs every request after routing/CORS with status + timing
+    application.add_middleware(RequestLogMiddleware)
+
     # Include API router
     application.include_router(api_router, prefix=settings.API_V1_STR)
 

@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../data/mock/mock_providers.dart';
+import '../../listing/presentation/providers/remote_listing_provider.dart';
 import '../../../shared/widgets/listing_card.dart';
-import '../../../shared/widgets/marketplace_bottom_nav.dart';
 import '../../../shared/widgets/state_views.dart';
 
 class MyListingsScreen extends ConsumerWidget {
@@ -12,7 +11,7 @@ class MyListingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(myListingsProvider);
+    final async = ref.watch(myRemoteListingsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -24,12 +23,46 @@ class MyListingsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: items.isEmpty
-          ? const EmptyStateView(
+      body: async.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Could not load listings',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$e',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => ref.invalidate(myRemoteListingsProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        data: (items) {
+          if (items.isEmpty) {
+            return const EmptyStateView(
               title: 'No listings yet',
               subtitle: 'Create your first listing and it will show up here.',
-            )
-          : ListView.separated(
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(myRemoteListingsProvider);
+              await ref.read(myRemoteListingsProvider.future);
+            },
+            child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               itemCount: items.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
@@ -56,8 +89,8 @@ class MyListingsScreen extends ConsumerWidget {
                 );
               },
             ),
-      bottomNavigationBar: MarketplaceBottomNav(
-        currentPath: GoRouterState.of(context).uri.path,
+          );
+        },
       ),
     );
   }

@@ -19,13 +19,24 @@ class ListingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currency = NumberFormat.currency(
-      symbol: listing.currency,
+      symbol: '${listing.currency} ',
       decimalDigits: 0,
     );
+    final usd = listing.priceUsdApprox != null
+        ? NumberFormat.currency(symbol: r'$', decimalDigits: 0)
+            .format(listing.priceUsdApprox)
+        : null;
+    final spec = [
+      listing.transmission,
+      listing.fuelType,
+      listing.bodyType,
+    ].whereType<String>().where((s) => s.isNotEmpty).join(' · ');
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Card(
+        margin: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -36,14 +47,55 @@ class ListingCard extends StatelessWidget {
                     top: Radius.circular(16),
                   ),
                   child: AspectRatio(
-                    aspectRatio: isCompact ? 1.3 : 1.35,
-                    child: Image.network(
-                      listing.imageUrls.first,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
+                    aspectRatio: isCompact ? 1.3 : 1.05,
+                    child: listing.imageUrls.isEmpty
+                        ? ColoredBox(
+                            color: AppPalette.surface,
+                            child: Icon(
+                              Icons.directions_car_outlined,
+                              size: 48,
+                              color: AppPalette.textSecondary.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          )
+                        : Image.network(
+                            listing.imageUrls.first,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
                   ),
                 ),
+                if (listing.isVip)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppPalette.vipBadge,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.workspace_premium, color: Colors.white, size: 14),
+                          SizedBox(width: 4),
+                          Text(
+                            'VIP',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 Positioned(
                   top: 10,
                   right: 10,
@@ -64,35 +116,56 @@ class ListingCard extends StatelessWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    listing.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
                     currency.format(listing.price),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppPalette.primaryVariant,
-                    ),
+                          fontWeight: FontWeight.w800,
+                          color: AppPalette.textPrimary,
+                        ),
                   ),
-                  const SizedBox(height: 8),
+                  if (usd != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      usd,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppPalette.textSecondary,
+                          ),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    '${listing.brand} ${listing.model}: ${listing.year} г.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppPalette.textSecondary,
+                          height: 1.25,
+                        ),
+                  ),
+                  if (spec.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      spec,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppPalette.textSecondary,
+                            fontSize: 12,
+                          ),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.place_outlined,
-                        size: 15,
-                        color: AppPalette.textSecondary,
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundImage: NetworkImage(listing.owner.avatarUrl),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           listing.location,
@@ -100,6 +173,21 @@ class ListingCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
+                      ),
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        size: 18,
+                        color: AppPalette.textSecondary,
+                      ),
+                      const SizedBox(width: 10),
+                      Icon(
+                        listing.isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        size: 18,
+                        color: listing.isFavorite
+                            ? AppPalette.error
+                            : AppPalette.textSecondary,
                       ),
                     ],
                   ),

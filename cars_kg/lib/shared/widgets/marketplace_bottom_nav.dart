@@ -1,82 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/localization/app_localizations.dart';
 import '../../core/theme/app_palette.dart';
 
 class MarketplaceBottomNav extends StatelessWidget {
-  const MarketplaceBottomNav({super.key, required this.currentPath});
+  const MarketplaceBottomNav({super.key, required this.navigationShell});
 
-  final String currentPath;
+  final StatefulNavigationShell navigationShell;
 
-  int get _index {
-    if (currentPath.startsWith('/inbox') || currentPath.startsWith('/chat')) {
-      return 1;
+  void _selectTab(BuildContext context, int index) {
+    final router = GoRouter.of(context);
+    while (router.canPop()) {
+      router.pop();
     }
-    if (currentPath.startsWith('/favorites')) {
-      return 2;
-    }
-    if (currentPath.startsWith('/my-listings') ||
-        currentPath.startsWith('/listing/create')) {
-      return 3;
-    }
-    if (currentPath.startsWith('/profile') ||
-        currentPath.startsWith('/promotions')) {
-      return 4;
-    }
-    return 0;
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return NavigationBar(
-      selectedIndex: _index,
-      onDestinationSelected: (index) {
-        switch (index) {
-          case 0:
-            context.go('/home');
-            break;
-          case 1:
-            context.go('/inbox');
-            break;
-          case 2:
-            context.go('/favorites');
-            break;
-          case 3:
-            context.go('/my-listings');
-            break;
-          case 4:
-            context.go('/profile');
-            break;
-        }
-      },
+      selectedIndex: navigationShell.currentIndex,
+      onDestinationSelected: (index) => _selectTab(context, index),
       height: 72,
       backgroundColor: AppPalette.surface,
-      indicatorColor: AppPalette.secondary.withValues(alpha: 0.16),
-      destinations: const [
+      indicatorColor: AppPalette.primary.withValues(alpha: 0.12),
+      destinations: [
         NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Home',
+          icon: const Icon(Icons.home_outlined),
+          selectedIcon: const Icon(Icons.home),
+          label: l10n.t('home'),
         ),
         NavigationDestination(
-          icon: Icon(Icons.chat_bubble_outline),
-          selectedIcon: Icon(Icons.chat_bubble),
-          label: 'Inbox',
+          icon: const Icon(Icons.chat_bubble_outline),
+          selectedIcon: const Icon(Icons.chat_bubble),
+          label: l10n.t('inbox'),
         ),
         NavigationDestination(
-          icon: Icon(Icons.favorite_border),
-          selectedIcon: Icon(Icons.favorite),
-          label: 'Favorites',
+          icon: const Icon(Icons.favorite_border),
+          selectedIcon: const Icon(Icons.favorite),
+          label: l10n.t('favorites'),
         ),
         NavigationDestination(
-          icon: Icon(Icons.storefront_outlined),
-          selectedIcon: Icon(Icons.storefront),
-          label: 'My Listings',
+          icon: const Icon(Icons.directions_car_outlined),
+          selectedIcon: const Icon(Icons.directions_car),
+          label: l10n.t('myListings'),
         ),
         NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: 'Profile',
+          icon: const Icon(Icons.person_outline),
+          selectedIcon: const Icon(Icons.person),
+          label: l10n.t('profile'),
         ),
       ],
     );

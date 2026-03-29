@@ -18,7 +18,9 @@ target_metadata = Base.metadata
 def get_sync_database_url() -> str:
     url = settings.DATABASE_URL
     if url.startswith("mysql+aiomysql://"):
-        return "mysql+pymysql://" + url.removeprefix("mysql+aiomysql://")
+        url = "mysql+pymysql://" + url.removeprefix("mysql+aiomysql://")
+    if url.startswith("mysql+pymysql://") and "charset=" not in url:
+        url = f"{url}{'&' if '?' in url else '?'}charset=utf8mb4"
     return url
 
 

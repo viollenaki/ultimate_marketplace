@@ -13,5 +13,17 @@ class Category(BaseModel):
     display_order = Column(Integer, default=0)
     parent_category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
 
-    parent = relationship("Category", remote_side=[id], back_populates="subcategories")
-    subcategories = relationship("Category", back_populates="parent")
+
+# Assign after class body so `Category.id` exists (inherited from BaseModel). Using
+# `remote_side=[id]` inside the class runs in a namespace where `id` is the builtin.
+Category.parent = relationship(
+    "Category",
+    remote_side=[Category.id],
+    foreign_keys=[Category.parent_category_id],
+    back_populates="subcategories",
+)
+Category.subcategories = relationship(
+    "Category",
+    foreign_keys=[Category.parent_category_id],
+    back_populates="parent",
+)

@@ -15,7 +15,7 @@ class UltimateMarketplaceApp extends ConsumerWidget {
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Ultimate Marketplace',
+      title: 'Cars KG',
       theme: AppTheme.lightTheme,
       routerConfig: router,
       locale: const Locale('en'),

@@ -32,12 +32,13 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<BackendAuthToken> signUpWithEmail({
     required String email,
     required String password,
+    required String fullName,
   }) async {
-    final credential = await _service.signUpWithEmail(
+    final credential = await _service.createUserWithEmailAndPassword(
       email: email,
       password: password,
+      fullName: fullName,
     );
-
     return _exchangeFirebaseToken(credential);
   }
 
@@ -65,8 +66,13 @@ class AuthRepositoryImpl implements AuthRepository {
       throw const BackendAuthException('Unable to retrieve Firebase ID token');
     }
 
-    final backendToken = await _service.authenticateWithBackend(idToken);
-    await _service.persistBackendToken(backendToken);
-    return backendToken;
+    try {
+      final backendToken = await _service.authenticateWithBackend(idToken);
+      await _service.persistBackendToken(backendToken);
+      return backendToken;
+    } on Object {
+      await _service.discardFirebaseSession();
+      rethrow;
+    }
   }
 }
