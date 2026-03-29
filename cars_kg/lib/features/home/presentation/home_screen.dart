@@ -314,7 +314,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       asset,
                                       fit: BoxFit.contain,
                                       gaplessPlayback: true,
-                                      errorBuilder: (_, __, ___) => Center(
+                                      errorBuilder: (_, _, _) => Center(
                                         child: Text(
                                           letter,
                                           style: const TextStyle(
