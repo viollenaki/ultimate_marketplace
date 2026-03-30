@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../data/mock/mock_providers.dart';
 import '../../../shared/widgets/app_snackbar.dart';
 import '../../../shared/widgets/auth_required_dialog.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
+import '../../chat/data/conversations_api.dart';
 import '../../favorites/presentation/favorite_optimistic_notifier.dart';
 import 'providers/remote_listing_provider.dart';
 
@@ -25,6 +27,7 @@ class ListingDetailScreen extends ConsumerStatefulWidget {
 
 class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   int _imageIndex = 0;
+  bool _openingChat = false;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +103,55 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       favoriteApiId: null,
       isFavorite: listing.isFavorite,
     );
+  }
+
+  Future<void> _openChatWithSeller(
+    BuildContext context,
+    int listingId,
+    MarketplaceUser owner,
+    AuthState authState,
+  ) async {
+    final otherUserId = int.tryParse(owner.id);
+    if (otherUserId == null) {
+      if (context.mounted) {
+        showNotReadySnackBar(context, 'Could not resolve seller account.');
+      }
+      return;
+    }
+    if (authState.userId == otherUserId) {
+      if (context.mounted) {
+        showNotReadySnackBar(context, 'You cannot message yourself.');
+      }
+      return;
+    }
+    setState(() => _openingChat = true);
+    try {
+      final dio = ref.read(authenticatedApiClientProvider).dio;
+      final conversationId = await createOrGetConversation(
+        dio,
+        otherUserId: otherUserId,
+        listingId: listingId,
+      );
+      ref.invalidate(conversationsProvider);
+      if (context.mounted) {
+        context.push('/chat/$conversationId');
+      }
+    } on DioException catch (e) {
+      if (context.mounted) {
+        showNotReadySnackBar(
+          context,
+          conversationCreateErrorMessage(e),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showNotReadySnackBar(context, e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _openingChat = false);
+      }
+    }
   }
 
   Widget _buildScaffold(
@@ -261,10 +313,26 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     ),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundImage: NetworkImage(owner.avatarUrl),
-                        ),
+                        if (owner.avatarUrl.isNotEmpty)
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundImage: NetworkImage(owner.avatarUrl),
+                          )
+                        else
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: AppPalette.surface,
+                            child: Text(
+                              owner.name.isNotEmpty
+                                  ? owner.name[0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppPalette.textPrimary,
+                              ),
+                            ),
+                          ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -301,19 +369,38 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () async {
-                            if (!authState.isAuthenticated) {
-                              await showAuthRequiredDialog(context);
-                              return;
-                            }
-                            if (context.mounted) {
-                              showNotReadySnackBar(
-                                context,
-                                l10n.t('chatLater'),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.chat_bubble_outline),
+                          onPressed: _openingChat
+                              ? null
+                              : () async {
+                                  if (!authState.isAuthenticated) {
+                                    await showAuthRequiredDialog(context);
+                                    return;
+                                  }
+                                  if (favoriteApiId == null) {
+                                    if (context.mounted) {
+                                      showNotReadySnackBar(
+                                        context,
+                                        'Messaging needs a listing from the server.',
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  await _openChatWithSeller(
+                                    context,
+                                    favoriteApiId,
+                                    owner,
+                                    authState,
+                                  );
+                                },
+                          icon: _openingChat
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.chat_bubble_outline),
                           label: Text(l10n.t('message')),
                         ),
                       ),

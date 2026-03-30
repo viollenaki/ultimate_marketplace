@@ -10,7 +10,9 @@ from sqlalchemy.orm import selectinload
 
 from app.core.exceptions import AppException
 from app.models import Conversation, Message, Notification, User
+from app.realtime.chat_presence import is_user_active_in_conversation
 from app.realtime.connection_manager import broadcast_to_conversation
+from app.services.push_notification_queue import enqueue_fcm_to_user
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.listing_repository import ListingRepository
 from app.repositories.message_repository import MessageRepository
@@ -207,4 +209,23 @@ class ChatService:
             conversation_id,
             {"event": "new_message", "data": payload.model_dump(mode="json")},
         )
+
+        # Skip FCM when the peer has this conversation open in a WebSocket (Redis presence).
+        recipient_in_chat = await is_user_active_in_conversation(
+            conversation_id,
+            recipient_id,
+        )
+        if not recipient_in_chat:
+            sender_name = (payload.sender.full_name or "").strip() or "Someone"
+            enqueue_fcm_to_user(
+                recipient_id,
+                title=f"New message from {sender_name}",
+                body=preview,
+                data={
+                    "type": "new_message",
+                    "conversation_id": str(conversation_id),
+                    "message_id": str(msg_loaded.id),
+                },
+            )
+
         return payload

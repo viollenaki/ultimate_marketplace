@@ -1,8 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../core/config/app_config.dart';
+import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/chat/data/conversations_api.dart';
 import 'mock_data.dart';
 import 'mock_models.dart';
 
@@ -31,6 +34,14 @@ final inboxStateProvider = StateProvider<DemoLoadState>(
 final conversationsProvider = FutureProvider<List<ConversationPreview>>((
   ref,
 ) async {
+  if (!ref.watch(mockModeProvider)) {
+    final dio = ref.watch(authenticatedApiClientProvider).dio;
+    try {
+      return await fetchConversationsForInbox(dio);
+    } on DioException catch (e) {
+      throw Exception(e.message ?? 'Could not load conversations');
+    }
+  }
   await Future<void>.delayed(const Duration(milliseconds: 420));
   final state = ref.watch(inboxStateProvider);
   if (state == DemoLoadState.error) {

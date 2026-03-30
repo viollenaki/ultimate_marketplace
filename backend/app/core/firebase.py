@@ -31,6 +31,15 @@ def _resolve_credentials_path() -> Path:
     )
 
 
+def firebase_credentials_resolvable() -> bool:
+    """True if [FIREBASE_CREDENTIALS_PATH] points to an existing service account JSON."""
+    try:
+        _resolve_credentials_path()
+        return True
+    except FileNotFoundError:
+        return False
+
+
 def ensure_firebase_initialized() -> None:
     """Initialize the default Firebase app once using the service account JSON."""
     if firebase_admin._apps:

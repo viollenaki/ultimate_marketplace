@@ -13,7 +13,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Application settings."""
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
     # API settings (include_router prefix). Empty .env value would mount routes at /listings/...
     # while clients call /api/v1/listings/... → 404.
@@ -82,6 +86,14 @@ class Settings(BaseSettings):
     # Custom JWT (API access after Firebase login)
     JWT_ALGORITHM: str = Field(default="HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60 * 24)
+
+    # Legacy FCM HTTP API server key (optional; token registration still works without it)
+    FCM_SERVER_KEY: str = Field(default="")
+    # FCM HTTP v1 via service account (when FCM_SERVER_KEY unset). Use JSON file and/or:
+    FCM_PROJECT_ID: str = Field(default="")
+    FCM_CLIENT_EMAIL: str = Field(default="")
+    # PEM; in .env use \n for newlines
+    FCM_PRIVATE_KEY: str = Field(default="")
 
 
 # Create settings instance

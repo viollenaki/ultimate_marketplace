@@ -34,7 +34,8 @@ RUN pip install --no-cache-dir python-multipart==0.0.20
 COPY . .
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Strip CRLF from Windows checkouts (avoids shebang "no such file" in Linux).
+RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -44,7 +45,7 @@ ENV PYTHONUNBUFFERED=1
 # Expose port
 EXPOSE 8000
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/docker-entrypoint.sh"]
 # Gunicorn + Uvicorn workers (ASGI). Access + error logs to stdout for `docker compose logs`.
 # Migrations run once in entrypoint before workers fork (see docker-compose for celery override).
 CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "4", "-b", "0.0.0.0:8000", "app.main:app", "--reload"]

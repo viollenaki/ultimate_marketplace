@@ -1,5 +1,31 @@
 import '../../../data/mock/mock_models.dart';
 
+MarketplaceUser _ownerFromListingJson(
+  Map<String, dynamic> j,
+  Map<String, dynamic>? ownerJson,
+  String ownerId,
+) {
+  final listingCity = j['city'] as String? ?? '';
+  if (ownerJson == null) {
+    return MarketplaceUser(
+      id: ownerId,
+      name: 'Seller',
+      avatarUrl: '',
+      city: listingCity,
+    );
+  }
+  final fullName = (ownerJson['full_name'] as String?)?.trim() ?? '';
+  final ownerCity = (ownerJson['city'] as String?)?.trim() ?? '';
+  final avatar =
+      (ownerJson['profile_image_url'] as String?)?.trim() ?? '';
+  return MarketplaceUser(
+    id: '${ownerJson['id']}',
+    name: fullName.isNotEmpty ? fullName : 'Seller',
+    avatarUrl: avatar,
+    city: ownerCity.isNotEmpty ? ownerCity : listingCity,
+  );
+}
+
 Listing listingFromApiJson(
   Map<String, dynamic> j, {
   MarketplaceUser? ownerOverride,
@@ -11,13 +37,9 @@ Listing listingFromApiJson(
       .whereType<String>()
       .toList();
   final ownerId = '${j['owner_id']}';
+  final ownerJson = j['owner'] as Map<String, dynamic>?;
   final owner = ownerOverride ??
-      MarketplaceUser(
-        id: ownerId,
-        name: 'Seller',
-        avatarUrl: 'https://i.pravatar.cc/180?u=$ownerId',
-        city: j['city'] as String? ?? '',
-      );
+      _ownerFromListingJson(j, ownerJson, ownerId);
 
   return Listing(
     id: '${j['id']}',

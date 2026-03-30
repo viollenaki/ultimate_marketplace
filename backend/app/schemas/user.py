@@ -30,5 +30,6 @@ class UserPublic(BaseModel):
     id: int
     full_name: str
     profile_image_url: str | None = None
+    city: str | None = None
 
     model_config = {"from_attributes": True}

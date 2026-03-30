@@ -7,7 +7,10 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps.auth import get_current_user
-from app.api.listing_payload import listing_response_from_orm
+from app.api.listing_payload import (
+    listing_detail_response_from_orm,
+    listing_response_from_orm,
+)
 from app.core.exceptions import AppException
 from app.db.database import get_db
 from app.models import User
@@ -136,7 +139,7 @@ async def get_listing(
             status_code=e.status_code,
             detail={"success": False, "error": e.error},
         ) from None
-    return listing_response_from_orm(row)
+    return listing_detail_response_from_orm(row)
 
 
 @router.patch(

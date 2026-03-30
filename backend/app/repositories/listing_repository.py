@@ -9,10 +9,10 @@ from app.models.enums import ListingStatus
 
 
 def _public_feed_order_by():
-    """Newest published first; rows with NULL published_at last (MySQL has no NULLS LAST)."""
+    """Newest listings first (created_at); NULL created_at last (MySQL has no NULLS LAST)."""
     return (
-        case((Listing.published_at.is_(None), 1), else_=0).asc(),
-        Listing.published_at.desc(),
+        case((Listing.created_at.is_(None), 1), else_=0).asc(),
+        Listing.created_at.desc(),
         Listing.id.desc(),
     )
 
@@ -32,7 +32,10 @@ class ListingRepository:
     async def get_by_id(session: AsyncSession, listing_id: int) -> Listing | None:
         result = await session.execute(
             select(Listing)
-            .options(selectinload(Listing.media))
+            .options(
+                selectinload(Listing.media),
+                selectinload(Listing.owner),
+            )
             .where(Listing.id == listing_id, Listing.is_deleted.is_(False))
         )
         return result.scalar_one_or_none()

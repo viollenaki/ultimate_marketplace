@@ -4,6 +4,7 @@ Conversations & messages: REST + WebSocket realtime (JWT via `token` query param
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
@@ -13,6 +14,7 @@ from app.api.deps.auth import get_current_user, resolve_access_token_user
 from app.core.exceptions import AppException
 from app.db.database import AsyncSessionLocal, get_db
 from app.models import User
+from app.realtime.chat_presence import clear_chat_presence, refresh_chat_presence
 from app.realtime.connection_manager import subscribe, unsubscribe
 from app.schemas.conversation import (
     ConversationCreateRequest,
@@ -156,15 +158,34 @@ async def conversation_websocket(
         return
 
     await subscribe(conversation_id, websocket)
+    uid = int(user.id)
+
+    async def _presence_refresh_loop() -> None:
+        try:
+            while True:
+                await asyncio.sleep(30)
+                await refresh_chat_presence(conversation_id, uid)
+        except asyncio.CancelledError:
+            raise
+
+    await refresh_chat_presence(conversation_id, uid)
+    presence_task = asyncio.create_task(_presence_refresh_loop())
+
     try:
         await websocket.send_json(
             {
                 "event": "connected",
                 "conversation_id": conversation_id,
-                "user_id": int(user.id),
+                "user_id": uid,
             },
         )
     except Exception:
+        presence_task.cancel()
+        try:
+            await presence_task
+        except asyncio.CancelledError:
+            pass
+        await clear_chat_presence(conversation_id, uid)
         await unsubscribe(conversation_id, websocket)
         return
 
@@ -244,4 +265,10 @@ async def conversation_websocket(
     except WebSocketDisconnect:
         pass
     finally:
+        presence_task.cancel()
+        try:
+            await presence_task
+        except asyncio.CancelledError:
+            pass
+        await clear_chat_presence(conversation_id, uid)
         await unsubscribe(conversation_id, websocket)

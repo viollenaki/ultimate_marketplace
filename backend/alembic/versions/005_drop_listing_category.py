@@ -19,6 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
+    column_names = {c["name"] for c in inspector.get_columns("listings")}
+    if "category_id" not in column_names:
+        # Fresh DBs created from ORM without category_id (e.g. 001 create_all).
+        return
     for fk in inspector.get_foreign_keys("listings"):
         cols = fk.get("constrained_columns") or []
         if "category_id" in cols:

@@ -39,6 +39,19 @@ class Env {
   /// REST API base: `{backendOrigin}/api/v1`. Use with [ApiClient] (relative paths).
   static String get apiBaseUrl => '$backendOrigin/api/v1';
 
+  /// WebSocket for realtime chat: `ws(s)://{host}/api/v1/conversations/{id}/ws?token=…`.
+  static Uri conversationWebSocketUri(int conversationId, String accessToken) {
+    final base = Uri.parse(backendOrigin);
+    final scheme = base.scheme == 'https' ? 'wss' : 'ws';
+    return Uri(
+      scheme: scheme,
+      host: base.host,
+      port: base.hasPort ? base.port : null,
+      path: '/api/v1/conversations/$conversationId/ws',
+      queryParameters: {'token': accessToken},
+    );
+  }
+
   /// Same as [backendOrigin] (legacy name).
   static String get backendUrl => backendOrigin;
 

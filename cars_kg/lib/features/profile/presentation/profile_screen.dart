@@ -83,12 +83,6 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 14),
             _settingTile(
               context,
-              Icons.sell_outlined,
-              l10n.t('promotionsPayments'),
-              () => context.push('/promotions'),
-            ),
-            _settingTile(
-              context,
               Icons.language_outlined,
               l10n.t('languageSheetTitle'),
               () => _openLanguageSheet(context, ref),

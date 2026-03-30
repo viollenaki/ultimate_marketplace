@@ -33,3 +33,8 @@ class User(BaseModel):
         foreign_keys="[Report.reporter_user_id]",
     )
     notifications = relationship("Notification", back_populates="user")
+    fcm_tokens = relationship(
+        "UserFcmToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

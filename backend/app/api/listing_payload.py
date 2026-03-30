@@ -4,10 +4,14 @@ from typing import cast
 from app.models import Listing
 from app.schemas.listing import ListingResponse
 from app.schemas.media import ListingMediaResponse
+from app.schemas.user import UserPublic
 
 
-def _listing_response(row: Listing) -> ListingResponse:
+def _listing_response(row: Listing, *, include_owner: bool = False) -> ListingResponse:
     media_sorted = sorted(row.media, key=lambda m: m.order_index)
+    owner_public: UserPublic | None = None
+    if include_owner and row.owner is not None:
+        owner_public = UserPublic.model_validate(row.owner)
     return ListingResponse(
         id=cast(int, row.id),
         owner_id=cast(int, row.owner_id),
@@ -36,8 +40,13 @@ def _listing_response(row: Listing) -> ListingResponse:
         moderation_status=cast(str, row.moderation_status),
         view_count=cast(int, row.view_count or 0),
         media=[ListingMediaResponse.model_validate(m) for m in media_sorted],
+        owner=owner_public,
     )
 
 
 def listing_response_from_orm(row: Listing) -> ListingResponse:
-    return _listing_response(row)
+    return _listing_response(row, include_owner=False)
+
+
+def listing_detail_response_from_orm(row: Listing) -> ListingResponse:
+    return _listing_response(row, include_owner=True)

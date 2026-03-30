@@ -25,6 +25,7 @@ from .promotion import Promotion
 from .promotion_package import PromotionPackage
 from .report import Report
 from .user import User
+from .user_fcm_token import UserFcmToken
 
 __all__ = [
     "AuditLog",
@@ -50,5 +51,6 @@ __all__ = [
     "ReportStatus",
     "TransmissionType",
     "User",
+    "UserFcmToken",
     "UserStatus",
 ]

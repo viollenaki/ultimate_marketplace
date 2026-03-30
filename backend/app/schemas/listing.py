@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.media import ListingMediaResponse
+from app.schemas.user import UserPublic
 
 
 class ListingCreate(BaseModel):
@@ -83,6 +84,7 @@ class ListingResponse(BaseModel):
     moderation_status: str
     view_count: int = 0
     media: list[ListingMediaResponse] = Field(default_factory=list)
+    owner: UserPublic | None = None
 
     @field_validator("media", mode="before")
     @classmethod

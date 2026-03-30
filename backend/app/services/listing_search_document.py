@@ -14,6 +14,11 @@ def build_listing_search_document(listing: Listing) -> dict[str, Any]:
     if published is not None:
         published_iso = published.isoformat() if hasattr(published, "isoformat") else str(published)
 
+    created = listing.created_at
+    created_iso = None
+    if created is not None:
+        created_iso = created.isoformat() if hasattr(created, "isoformat") else str(created)
+
     search_blob = " ".join(
         str(x)
         for x in (
@@ -49,5 +54,6 @@ def build_listing_search_document(listing: Listing) -> dict[str, Any]:
         "is_deleted": bool(listing.is_deleted),
         "is_crashed": bool(listing.is_crashed),
         "published_at": published_iso,
+        "created_at": created_iso,
         "search_blob": search_blob,
     }

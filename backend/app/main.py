@@ -1,6 +1,7 @@
 """
 FastAPI application entry point.
 """
+import asyncio
 import logging
 
 from fastapi import FastAPI, HTTPException
@@ -13,6 +14,11 @@ from app.core.elasticsearch_client import close_async_elasticsearch, get_async_e
 from app.services.listing_search_service import ensure_listings_index_async
 from app.core.request_log_middleware import RequestLogMiddleware
 from app.db.database import init_db
+from app.realtime.redis_chat_bridge import (
+    start_chat_redis_listener,
+    stop_chat_redis_listener,
+    wait_chat_redis_subscribed,
+)
 
 # Configure logging (stdout → visible in `docker compose logs -f app`)
 logging.basicConfig(
@@ -99,11 +105,24 @@ def create_application() -> FastAPI:
                 await ensure_listings_index_async(es)
             except Exception as e:
                 logger.warning("Could not ensure listings index: %s", e)
+        start_chat_redis_listener()
+
+        async def _log_chat_redis_readiness() -> None:
+            if await wait_chat_redis_subscribed(timeout=15.0):
+                logger.info("Chat Redis fan-out subscriber is ready")
+            else:
+                logger.warning(
+                    "Chat Redis subscriber not ready in 15s (is Redis up?). "
+                    "Multi-worker realtime chat may miss events until it connects."
+                )
+
+        asyncio.create_task(_log_chat_redis_readiness())
     
     @application.on_event("shutdown")
     async def shutdown_event():
         """Clean up resources on shutdown."""
         logger.info("Shutting down application...")
+        await stop_chat_redis_listener()
         await close_async_elasticsearch()
     
     return application

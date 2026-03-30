@@ -11,6 +11,7 @@ class ListingCard extends StatelessWidget {
     required this.onTap,
     this.onFavoritePressed,
     this.isCompact = false,
+    this.showSellerAvatar = false,
   });
 
   final Listing listing;
@@ -18,6 +19,8 @@ class ListingCard extends StatelessWidget {
   /// When null, the heart is display-only.
   final VoidCallback? onFavoritePressed;
   final bool isCompact;
+  /// Home feed hides seller photo; detail fetches seller separately.
+  final bool showSellerAvatar;
 
   @override
   Widget build(BuildContext context) {
@@ -174,11 +177,15 @@ class ListingCard extends StatelessWidget {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 14,
-                        backgroundImage: NetworkImage(listing.owner.avatarUrl),
-                      ),
-                      const SizedBox(width: 8),
+                      if (showSellerAvatar &&
+                          listing.owner.avatarUrl.isNotEmpty) ...[
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundImage:
+                              NetworkImage(listing.owner.avatarUrl),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       Expanded(
                         child: Text(
                           listing.location,

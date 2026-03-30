@@ -154,13 +154,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
                   child: Row(
                     children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                        padding: EdgeInsets.zero,
-                        constraints:
-                            const BoxConstraints(minWidth: 40, minHeight: 40),
-                      ),
                       Expanded(
                         child: TextField(
                           controller: _search,

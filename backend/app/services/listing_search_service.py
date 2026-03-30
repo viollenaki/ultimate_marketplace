@@ -42,6 +42,7 @@ LISTING_INDEX_MAPPINGS: dict[str, Any] = {
         "is_deleted": {"type": "boolean"},
         "is_crashed": {"type": "boolean"},
         "published_at": {"type": "date"},
+        "created_at": {"type": "date"},
         "search_blob": {"type": "text"},
     }
 }
@@ -69,23 +70,41 @@ def _public_filter_clauses() -> list[dict[str, Any]]:
     ]
 
 
+async def _ensure_created_at_mapping_async(es: AsyncElasticsearch, name: str) -> None:
+    try:
+        await es.indices.put_mapping(
+            index=name,
+            properties={"created_at": {"type": "date"}},
+        )
+    except ApiError as e:
+        logger.debug("Elasticsearch put_mapping created_at on %s: %s", name, e)
+
+
 async def ensure_listings_index_async(es: AsyncElasticsearch) -> None:
     name = listings_index_name()
-    if await es.indices.exists(index=name):
+    if not await es.indices.exists(index=name):
+        await es.indices.create(
+            index=name,
+            mappings=LISTING_INDEX_MAPPINGS,
+        )
+        logger.info("Created Elasticsearch index %s", name)
         return
-    await es.indices.create(
-        index=name,
-        mappings=LISTING_INDEX_MAPPINGS,
-    )
-    logger.info("Created Elasticsearch index %s", name)
+    await _ensure_created_at_mapping_async(es, name)
 
 
 def ensure_listings_index_sync(es: Elasticsearch) -> None:
     name = listings_index_name()
-    if es.indices.exists(index=name):
+    if not es.indices.exists(index=name):
+        es.indices.create(index=name, mappings=LISTING_INDEX_MAPPINGS)
+        logger.info("Created Elasticsearch index %s", name)
         return
-    es.indices.create(index=name, mappings=LISTING_INDEX_MAPPINGS)
-    logger.info("Created Elasticsearch index %s", name)
+    try:
+        es.indices.put_mapping(
+            index=name,
+            properties={"created_at": {"type": "date"}},
+        )
+    except ApiError as e:
+        logger.debug("Elasticsearch put_mapping created_at on %s: %s", name, e)
 
 
 async def index_listing_async(es: AsyncElasticsearch, listing: Any) -> None:
@@ -204,7 +223,7 @@ async def search_public_listing_ids(
         from_=skip,
         size=limit,
         sort=[
-            {"published_at": {"order": "desc", "missing": "_last"}},
+            {"created_at": {"order": "desc", "missing": "_last"}},
             {"listing_id": {"order": "desc"}},
         ],
         track_total_hits=True,
