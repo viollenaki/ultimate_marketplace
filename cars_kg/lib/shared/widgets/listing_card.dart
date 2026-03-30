@@ -10,17 +10,23 @@ class ListingCard extends StatelessWidget {
     required this.listing,
     required this.onTap,
     this.onFavoritePressed,
+    this.onReportPressed,
     this.isCompact = false,
     this.showSellerAvatar = false,
+    this.showOwnerStats = false,
   });
 
   final Listing listing;
   final VoidCallback onTap;
   /// When null, the heart is display-only.
   final VoidCallback? onFavoritePressed;
+  /// When null, the report (flag) control is hidden.
+  final VoidCallback? onReportPressed;
   final bool isCompact;
   /// Home feed hides seller photo; detail fetches seller separately.
   final bool showSellerAvatar;
+  /// Views + saves strip for "My listings" (seller analytics).
+  final bool showOwnerStats;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +78,31 @@ class ListingCard extends StatelessWidget {
                           ),
                   ),
                 ),
+                if (onReportPressed != null)
+                  Positioned(
+                    left: 4,
+                    bottom: 4,
+                    child: Material(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: IconButton(
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                        onPressed: onReportPressed,
+                        tooltip: 'Report listing',
+                        icon: Icon(
+                          Icons.flag_outlined,
+                          size: 20,
+                          color: AppPalette.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
                 if (listing.isVip)
                   Positioned(
                     top: 10,
@@ -174,6 +205,16 @@ class ListingCard extends StatelessWidget {
                           ),
                     ),
                   ],
+                  if (showOwnerStats) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '${listing.viewCount} views · ${listing.favoriteCount} saves',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppPalette.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -208,6 +249,14 @@ class ListingCard extends StatelessWidget {
                         color: listing.isFavorite
                             ? AppPalette.error
                             : AppPalette.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${listing.favoriteCount}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppPalette.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ],
                   ),

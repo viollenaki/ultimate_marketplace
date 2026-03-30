@@ -35,7 +35,11 @@ class FavoriteOptimisticNotifier extends Notifier<Map<int, bool>> {
     if (id == null) return listing;
     final v = overrides[id];
     if (v == null) return listing;
-    return listing.copyWith(isFavorite: v);
+    var count = listing.favoriteCount;
+    if (v != listing.isFavorite) {
+      count = (count + (v ? 1 : -1)).clamp(0, 1 << 30);
+    }
+    return listing.copyWith(isFavorite: v, favoriteCount: count);
   }
 
   Future<void> requestToggle(Listing listing, BuildContext context) async {

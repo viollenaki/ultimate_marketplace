@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/mock/mock_models.dart';
 import '../../../data/mock/mock_providers.dart';
 import '../../../shared/widgets/listing_card.dart';
+import '../../../shared/widgets/listing_report_sheet.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import 'favorite_optimistic_notifier.dart';
@@ -41,6 +42,7 @@ class FavoritesScreen extends ConsumerWidget {
             items: items,
             favoriteOverrides: const {},
             onFavoritePressed: null,
+            onReportPressed: null,
           ),
         ),
       );
@@ -73,6 +75,11 @@ class FavoritesScreen extends ConsumerWidget {
           favoriteOverrides: favoriteOverrides,
           onFavoritePressed: (listing) =>
               _toggleFavorite(ref, context, listing: listing),
+          onReportPressed: (listing) async {
+            final id = int.tryParse(listing.id);
+            if (id == null) return;
+            await showListingReportSheet(context, listingId: id);
+          },
         ),
       ),
     );
@@ -84,11 +91,13 @@ class _FavoritesGrid extends StatelessWidget {
     required this.items,
     required this.favoriteOverrides,
     required this.onFavoritePressed,
+    required this.onReportPressed,
   });
 
   final List<Listing> items;
   final Map<int, bool> favoriteOverrides;
   final void Function(Listing listing)? onFavoritePressed;
+  final void Function(Listing listing)? onReportPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +114,9 @@ class _FavoritesGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.73,
+        // ListingCard image + padded text needs more vertical space than 0.73
+        // provides at typical phone widths (avoids inner Column overflow).
+        childAspectRatio: 0.58,
       ),
       itemBuilder: (context, index) {
         final item = items[index];
@@ -116,10 +127,14 @@ class _FavoritesGrid extends StatelessWidget {
         );
         return ListingCard(
           listing: cardListing,
+          isCompact: true,
           onTap: () => context.push('/listing/${item.id}'),
           onFavoritePressed: onFavoritePressed == null
               ? null
               : () => onFavoritePressed!(item),
+          onReportPressed: onReportPressed == null
+              ? null
+              : () => onReportPressed!(item),
         );
       },
     );

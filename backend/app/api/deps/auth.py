@@ -74,3 +74,16 @@ async def resolve_access_token_user(db: AsyncSession, token: str) -> User:
         raise _forbidden("Account is no longer available")
 
     return user
+
+
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Same as [get_current_user] when Bearer token is valid; otherwise None."""
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        return None
+    try:
+        return await resolve_access_token_user(db, credentials.credentials)
+    except HTTPException:
+        return None

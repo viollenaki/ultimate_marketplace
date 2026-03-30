@@ -73,6 +73,7 @@ class MyListingsScreen extends ConsumerWidget {
                     ListingCard(
                       listing: item,
                       isCompact: true,
+                      showOwnerStats: true,
                       onTap: () => context.push('/listing/${item.id}'),
                     ),
                     Positioned(

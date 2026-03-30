@@ -17,7 +17,9 @@ Future<void> showAuthRequiredDialog(BuildContext context) {
         FilledButton(
           onPressed: () {
             Navigator.of(context).pop();
-            context.push('/login');
+            final router = GoRouter.of(context);
+            final from = Uri.encodeComponent(router.state.uri.toString());
+            context.push('/login?from=$from');
           },
           child: const Text('Login'),
         ),

@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.admin import api_router as admin_api_router
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.elasticsearch_client import close_async_elasticsearch, get_async_elasticsearch
@@ -54,6 +55,7 @@ def create_application() -> FastAPI:
 
     # Include API router
     application.include_router(api_router, prefix=settings.API_V1_STR)
+    application.include_router(admin_api_router, prefix="/admin")
 
     fav_paths = [
         getattr(r, "path", "")

@@ -99,7 +99,6 @@ class AppLocalizations {
       'languageSheetTitle': 'Language',
       'languageEnglish': 'English',
       'languageRussian': 'Русский',
-      'profileBackendHealth': 'Backend health check',
       'profileNotifications': 'Notifications',
       'profilePrivacy': 'Privacy',
       'profileHelp': 'Help center',

@@ -4,6 +4,8 @@ from sqlalchemy.orm import relationship
 from .base import BaseModel
 from .enums import ReportStatus
 
+REPORT_TARGET_LISTING = "listing"
+
 
 class Report(BaseModel):
     __tablename__ = "reports"

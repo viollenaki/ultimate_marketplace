@@ -1,4 +1,4 @@
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -6,6 +6,38 @@ from app.models import Favorite, Listing
 
 
 class FavoriteRepository:
+    @staticmethod
+    async def count_for_listing(
+        session: AsyncSession,
+        listing_id: int,
+    ) -> int:
+        result = await session.execute(
+            select(func.count())
+            .select_from(Favorite)
+            .where(
+                Favorite.listing_id == listing_id,
+                Favorite.is_deleted.is_(False),
+            )
+        )
+        return int(result.scalar_one() or 0)
+
+    @staticmethod
+    async def counts_for_listings(
+        session: AsyncSession,
+        listing_ids: list[int],
+    ) -> dict[int, int]:
+        if not listing_ids:
+            return {}
+        result = await session.execute(
+            select(Favorite.listing_id, func.count(Favorite.id))
+            .where(
+                Favorite.listing_id.in_(listing_ids),
+                Favorite.is_deleted.is_(False),
+            )
+            .group_by(Favorite.listing_id)
+        )
+        return {int(r[0]): int(r[1]) for r in result.all()}
+
     @staticmethod
     async def exists(
         session: AsyncSession,

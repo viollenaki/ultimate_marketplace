@@ -132,6 +132,8 @@ final mockListings = List.generate(24, (index) {
     isCrashed: index % 11 == 0,
     openToTrade: index % 7 == 0,
     sellerIsDealer: index % 9 == 0,
+    viewCount: 42 + index * 3,
+    favoriteCount: index % 5,
   );
 });
 

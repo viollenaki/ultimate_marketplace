@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Insert 200 varied car listings (approved, public) and index each in Elasticsearch.
+Insert DEMO_LISTING_COUNT varied car listings (approved) and index each in Elasticsearch.
 
 Requires: MySQL migrated, Elasticsearch up, at least one user in `users`.
 
@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import random
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,44 +50,67 @@ BRANDS_MODELS: dict[str, list[str]] = {
 }
 
 CITIES = ["Bishkek", "Osh", "Jalal-Abad", "Karakol", "Tokmok", "Naryn"]
+# Approximate centers (lat, lon) with small jitter applied per row
+CITY_COORDS: dict[str, tuple[float, float]] = {
+    "Bishkek": (42.8746, 74.5698),
+    "Osh": (40.5283, 72.8064),
+    "Jalal-Abad": (40.9333, 73.0000),
+    "Karakol": (42.4906, 78.3936),
+    "Tokmok": (42.8417, 75.3014),
+    "Naryn": (41.4283, 75.9911),
+}
 COLORS = ["white", "black", "silver", "gray", "blue", "red", "green", "brown"]
 
-# Change this constant if you want a different batch size.
 DEMO_LISTING_COUNT = 200
+
+
+def _jitter_coord(lat: float, lon: float) -> tuple[float, float]:
+    return (
+        round(lat + random.uniform(-0.08, 0.08), 6),
+        round(lon + random.uniform(-0.08, 0.08), 6),
+    )
 
 
 async def main() -> None:
     async with AsyncSessionLocal() as session:
-        user = (
-            await session.execute(select(User).order_by(User.id).limit(1))
-        ).scalar_one_or_none()
-        if user is None:
+        users = (await session.execute(select(User).order_by(User.id))).scalars().all()
+        if not users:
             print("No user found. Create a user first, then re-run.")
             return
 
-        owner_id = int(user.id)
+        owner_ids = [int(u.id) for u in users]
         fuels = [e.value for e in FuelType]
         bodies = [e.value for e in BodyType]
         trans = [e.value for e in TransmissionType]
         created_ids: list[int] = []
+        now = datetime.now(timezone.utc)
 
-        for n in range(50):
+        for n in range(DEMO_LISTING_COUNT):
             brand = random.choice(list(BRANDS_MODELS))
             model = random.choice(BRANDS_MODELS[brand])
             year = random.randint(2008, 2024)
             mileage = random.randint(5_000, 280_000)
-            price = float(random.randint(4_000, 65_000))
+            price = float(random.randint(200_000, 4_500_000))
             city = random.choice(CITIES)
+            lat0, lon0 = CITY_COORDS[city]
+            lat, lon = _jitter_coord(lat0, lon0)
+            owner_id = random.choice(owner_ids)
+
+            published_at = now - timedelta(days=random.randint(0, 180))
+
             row = Listing(
                 owner_id=owner_id,
                 title=f"{brand} {model} {year} — demo #{n + 1}",
                 description=(
-                    f"Demo listing {n + 1}. {brand} {model}, well maintained, "
-                    f"{mileage} km. Contact for details."
+                    f"Auto-generated demo listing {n + 1}. {brand} {model}, "
+                    f"{mileage} km, located in {city}. Inspection welcome."
                 ),
                 price=price,
-                currency="USD",
+                currency="KGS",
                 city=city,
+                latitude=lat,
+                longitude=lon,
+                location_display_name=f"{city}, KG",
                 brand=brand,
                 model=model,
                 year=year,
@@ -96,18 +119,25 @@ async def main() -> None:
                 transmission=random.choice(trans),
                 body_type=random.choice(bodies),
                 color=random.choice(COLORS),
+                engine_volume=round(random.uniform(1.2, 4.5), 1),
+                horsepower=random.randint(90, 350),
+                doors=random.choice([2, 4, 5]),
                 is_crashed=random.random() < 0.12,
                 has_warranty=random.random() < 0.25,
                 status=ListingStatus.approved.value,
                 moderation_status="approved",
-                published_at=datetime.now(timezone.utc),
+                view_count=random.randint(0, 8_000),
+                published_at=published_at,
             )
             session.add(row)
             await session.flush()
             created_ids.append(int(row.id))
 
         await session.commit()
-        print(f"Inserted {len(created_ids)} listings (ids {created_ids[0]}..{created_ids[-1]}).")
+        print(
+            f"Inserted {len(created_ids)} listings "
+            f"(ids {created_ids[0]}..{created_ids[-1]}), owners from user id(s) {owner_ids}."
+        )
 
     es = get_sync_elasticsearch()
     repo = ListingRepository()

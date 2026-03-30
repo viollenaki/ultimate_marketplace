@@ -82,14 +82,19 @@ class HomeFeedNotifier extends Notifier<HomeFeedViewState> {
     await _loadPage(skip: 0, append: false);
   }
 
-  /// Updates [isFavorite] for one listing in the current feed (after optimistic API).
+  /// Updates [isFavorite] and public save counter after a successful favorites API call.
   void patchListingFavorite(int listingId, bool isFavorite) {
     state = state.copyWith(
       items: [
         for (final item in state.items)
-          int.tryParse(item.id) == listingId
-              ? item.copyWith(isFavorite: isFavorite)
-              : item,
+          if (int.tryParse(item.id) == listingId)
+            item.copyWith(
+              isFavorite: isFavorite,
+              favoriteCount: (item.favoriteCount + (isFavorite ? 1 : -1))
+                  .clamp(0, 1 << 30),
+            )
+          else
+            item,
       ],
     );
   }
@@ -145,7 +150,9 @@ class HomeFeedNotifier extends Notifier<HomeFeedViewState> {
         final rawItems = data['items'] as List<dynamic>? ?? [];
         total = (data['total'] as num?)?.toInt() ?? 0;
         page = rawItems
-            .map((e) => listingFromApiJson(e as Map<String, dynamic>))
+            .map((e) => listingFromApiJson(
+                  Map<String, dynamic>.from(e as Map),
+                ))
             .toList();
         final favAsync = ref.read(favoriteListingIdsProvider);
         final favSet = favAsync.maybeWhen(

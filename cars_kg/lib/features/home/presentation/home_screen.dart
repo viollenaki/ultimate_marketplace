@@ -9,8 +9,11 @@ import '../../../core/theme/app_palette.dart';
 import '../../../data/mock/mock_data.dart';
 import '../../../data/mock/mock_models.dart';
 import '../../../data/mock/mock_providers.dart';
+import '../../../shared/widgets/auth_required_dialog.dart';
 import '../../../shared/widgets/listing_card.dart';
+import '../../../shared/widgets/listing_report_sheet.dart';
 import '../../../shared/widgets/state_views.dart';
+import '../../auth/presentation/providers/auth_providers.dart';
 import '../../favorites/presentation/favorite_optimistic_notifier.dart';
 import '../domain/car_filters_state.dart';
 import 'car_filters_provider.dart';
@@ -58,6 +61,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (pos.pixels >= pos.maxScrollExtent - 400) {
       ref.read(homeFeedProvider.notifier).loadMore();
     }
+  }
+
+  Future<void> _openReportListing(BuildContext context, Listing listing) async {
+    final id = int.tryParse(listing.id);
+    if (id == null) return;
+    if (!ref.read(authControllerProvider).isAuthenticated) {
+      await showAuthRequiredDialog(context);
+      return;
+    }
+    await showListingReportSheet(context, listingId: id);
   }
 
   bool _matchesSearch(Listing listing, String q) {
@@ -434,6 +447,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             onFavoritePressed: useMock
                                 ? null
                                 : () => _toggleFavorite(item),
+                            onReportPressed: useMock
+                                ? null
+                                : () => _openReportListing(context, item),
                           );
                         }
                         return const Padding(

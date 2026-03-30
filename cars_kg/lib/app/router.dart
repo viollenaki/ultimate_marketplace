@@ -67,7 +67,13 @@ class _MarketplaceShell extends StatelessWidget {
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authControllerProvider);
+  // Rebuild GoRouter only when redirect-relevant auth fields change — not when
+  // `isLoading` / `errorMessage` / JWT updates during sign-in, or a new
+  // GoRouter instance would reset navigation and leave the login screen
+  // before the auth request finishes.
+  final (authInitialized, authAuthenticated) = ref.watch(
+    authControllerProvider.select((s) => (s.initialized, s.isAuthenticated)),
+  );
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -75,19 +81,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final path = state.uri.path;
 
-      if (!authState.initialized &&
+      if (!authInitialized &&
           path != '/splash' &&
           path != '/backend-health') {
         return '/splash';
       }
 
-      if (_isProtectedPath(path) && !authState.isAuthenticated) {
+      if (_isProtectedPath(path) && !authAuthenticated) {
         final from = Uri.encodeComponent(state.uri.toString());
         return '/login?from=$from';
       }
 
       final isAuthPage = path == '/login' || path == '/register';
-      if (isAuthPage && authState.isAuthenticated) {
+      if (isAuthPage && authAuthenticated) {
         final from = state.uri.queryParameters['from'];
         if (from != null && from.isNotEmpty) {
           return Uri.decodeComponent(from);

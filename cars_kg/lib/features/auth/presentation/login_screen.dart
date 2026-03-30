@@ -111,8 +111,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: authState.isLoading ? null : _handleGoogleLogin,
-                  icon: const Icon(Icons.g_mobiledata, size: 28),
-                  label: const Text('Continue with Google'),
+                  icon: authState.isLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.g_mobiledata, size: 28),
+                  label: Text(
+                    authState.isLoading ? 'Signing in…' : 'Continue with Google',
+                  ),
                 ),
                 if (authState.errorMessage != null) ...[
                   const SizedBox(height: 14),
@@ -138,7 +146,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextButton(
                         onPressed: authState.isLoading
                             ? null
-                            : () => context.push('/register'),
+                            : () {
+                                final from = GoRouterState.of(
+                                  context,
+                                ).uri.queryParameters['from'];
+                                if (from != null && from.isNotEmpty) {
+                                  context.push(
+                                    '/register?from=${Uri.encodeComponent(from)}',
+                                  );
+                                } else {
+                                  context.push('/register');
+                                }
+                              },
                         child: const Text('Create one'),
                       ),
                     ],
@@ -211,9 +230,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
 
-      final target =
-          GoRouterState.of(context).uri.queryParameters['from'] ?? '/home';
-      context.go(Uri.decodeComponent(target));
+      // Navigation is handled by [appRouterProvider] redirect once
+      // `isAuthenticated` becomes true.
     } on NoInternetConnectionException {
       if (mounted) {
         await showNoInternetDialog(context);
@@ -237,10 +255,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!ref.read(authControllerProvider).isAuthenticated) {
         return;
       }
-
-      final target =
-          GoRouterState.of(context).uri.queryParameters['from'] ?? '/home';
-      context.go(Uri.decodeComponent(target));
     } on NoInternetConnectionException {
       if (mounted) {
         await showNoInternetDialog(context);

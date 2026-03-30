@@ -69,13 +69,6 @@ class _BackendHealthScreenState extends ConsumerState<BackendHealthScreen> {
     final lanOverride = Env.lanHealthCheckUrl != Env.backendHealthUrl;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Backend health'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
-        ),
-      ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

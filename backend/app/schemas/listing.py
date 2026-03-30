@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.media import ListingMediaResponse
@@ -27,6 +30,8 @@ class ListingCreate(BaseModel):
     doors: int | None = None
     is_crashed: bool = False
     has_warranty: bool = False
+    expires_at: datetime | None = None
+    additional_attributes: dict[str, Any] | list[Any] | None = None
 
 
 class ListingUpdate(BaseModel):
@@ -52,6 +57,8 @@ class ListingUpdate(BaseModel):
     doors: int | None = None
     is_crashed: bool | None = None
     has_warranty: bool | None = None
+    expires_at: datetime | None = None
+    additional_attributes: dict[str, Any] | list[Any] | None = None
 
 
 class ListingResponse(BaseModel):
@@ -83,6 +90,10 @@ class ListingResponse(BaseModel):
     status: str
     moderation_status: str
     view_count: int = 0
+    favorite_count: int = 0
+    published_at: datetime | None = None
+    expires_at: datetime | None = None
+    additional_attributes: dict[str, Any] | list[Any] | None = None
     media: list[ListingMediaResponse] = Field(default_factory=list)
     owner: UserPublic | None = None
 

@@ -1,3 +1,8 @@
+from app.api.deps.admin import require_admin_access
 from app.api.deps.auth import get_current_user, resolve_access_token_user
 
-__all__ = ["get_current_user", "resolve_access_token_user"]
+__all__ = [
+    "get_current_user",
+    "require_admin_access",
+    "resolve_access_token_user",
+]

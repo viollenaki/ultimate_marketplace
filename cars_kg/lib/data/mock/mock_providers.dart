@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import '../../core/config/app_config.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/chat/data/conversations_api.dart';
@@ -11,10 +9,7 @@ import 'mock_models.dart';
 
 enum DemoLoadState { data, empty, error }
 
-@Riverpod(keepAlive: true)
-bool mockMode(Ref ref) => useMockData;
-
-final mockModeProvider = Provider<bool>((ref) => mockMode(ref));
+final mockModeProvider = Provider<bool>((ref) => useMockData);
 
 final homeFeedIsGridProvider = StateProvider<bool>((ref) => true);
 
@@ -55,9 +50,9 @@ final conversationsProvider = FutureProvider<List<ConversationPreview>>((
 
 class ChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
   ChatMessagesNotifier(this.conversationId)
-    : super(
-        List<ChatMessage>.from(mockChatMessages[conversationId] ?? const []),
-      );
+      : super(
+          List<ChatMessage>.from(mockChatMessages[conversationId] ?? const []),
+        );
 
   final String conversationId;
 
@@ -77,11 +72,9 @@ class ChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
 }
 
 final chatMessagesProvider =
-    StateNotifierProvider.family<
-      ChatMessagesNotifier,
-      List<ChatMessage>,
-      String
-    >((ref, conversationId) => ChatMessagesNotifier(conversationId));
+    StateNotifierProvider.family<ChatMessagesNotifier, List<ChatMessage>, String>(
+  (ref, conversationId) => ChatMessagesNotifier(conversationId),
+);
 
 final favoritesStateProvider = StateProvider<DemoLoadState>(
   (ref) => DemoLoadState.data,

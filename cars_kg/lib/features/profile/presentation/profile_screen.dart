@@ -89,30 +89,6 @@ class ProfileScreen extends ConsumerWidget {
             ),
             _settingTile(
               context,
-              Icons.cloud_sync_outlined,
-              l10n.t('profileBackendHealth'),
-              () => context.push('/backend-health'),
-            ),
-            _settingTile(
-              context,
-              Icons.notifications_none,
-              l10n.t('profileNotifications'),
-              () {},
-            ),
-            _settingTile(
-              context,
-              Icons.shield_outlined,
-              l10n.t('profilePrivacy'),
-              () {},
-            ),
-            _settingTile(
-              context,
-              Icons.help_outline,
-              l10n.t('profileHelp'),
-              () {},
-            ),
-            _settingTile(
-              context,
               Icons.logout,
               l10n.t('profileLogout'),
               () async {

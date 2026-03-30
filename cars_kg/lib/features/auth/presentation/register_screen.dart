@@ -168,7 +168,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (!ref.read(authControllerProvider).isAuthenticated) {
         return;
       }
-      context.go('/home');
+      // Post–sign-up navigation: [appRouterProvider] redirect handles this when
+      // `isAuthenticated` flips true (same as login).
     } on NoInternetConnectionException {
       if (mounted) {
         await showNoInternetDialog(context);

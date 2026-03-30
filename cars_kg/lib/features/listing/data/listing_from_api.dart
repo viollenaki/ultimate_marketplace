@@ -1,5 +1,30 @@
 import '../../../data/mock/mock_models.dart';
 
+/// Parses int fields from JSON (handles int, double, numeric string; snake or camel keys).
+String? _stringOrNull(dynamic v) {
+  if (v is String) {
+    return v;
+  }
+  return null;
+}
+
+int _readListingInt(Map<String, dynamic> j, String snake, String camel) {
+  final v = j[snake] ?? j[camel];
+  if (v == null) {
+    return 0;
+  }
+  if (v is int) {
+    return v;
+  }
+  if (v is num) {
+    return v.toInt();
+  }
+  if (v is String) {
+    return int.tryParse(v.trim()) ?? 0;
+  }
+  return 0;
+}
+
 MarketplaceUser _ownerFromListingJson(
   Map<String, dynamic> j,
   Map<String, dynamic>? ownerJson,
@@ -63,7 +88,11 @@ Listing listingFromApiJson(
     isCrashed: j['is_crashed'] as bool? ?? false,
     latitude: (j['latitude'] as num?)?.toDouble(),
     longitude: (j['longitude'] as num?)?.toDouble(),
-    locationDisplayName: j['location_display_name'] as String?,
+    locationDisplayName: _stringOrNull(
+      j['location_display_name'] ?? j['locationDisplayName'],
+    ),
+    viewCount: _readListingInt(j, 'view_count', 'viewCount'),
+    favoriteCount: _readListingInt(j, 'favorite_count', 'favoriteCount'),
   );
 }
 

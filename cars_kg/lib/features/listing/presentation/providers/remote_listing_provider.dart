@@ -6,28 +6,23 @@ import '../../../favorites/presentation/favorites_providers.dart';
 import '../../data/listing_from_api.dart';
 import 'listing_api_providers.dart';
 
-final myRemoteListingsProvider =
-    FutureProvider.autoDispose<List<Listing>>((ref) async {
+final myRemoteListingsProvider = FutureProvider.autoDispose<List<Listing>>((
+  ref,
+) async {
   final api = ref.watch(listingApiServiceProvider);
   final raw = await api.fetchMyListings();
   return raw
-      .map(
-        (e) => listingFromApiJson(
-          e,
-          ownerOverride: currentUser,
-        ),
-      )
+      .map((e) => listingFromApiJson(e, ownerOverride: currentUser))
       .toList();
 });
 
-final remoteListingProvider =
-    FutureProvider.autoDispose.family<Listing, int>((ref, id) async {
+final remoteListingProvider = FutureProvider.autoDispose.family<Listing, int>((
+  ref,
+  id,
+) async {
   final api = ref.watch(listingApiServiceProvider);
   final favAsync = ref.watch(favoriteListingIdsProvider);
-  final favSet = favAsync.maybeWhen(
-    data: (s) => s,
-    orElse: () => <int>{},
-  );
+  final favSet = favAsync.maybeWhen(data: (s) => s, orElse: () => <int>{});
   final j = await api.getListing(id);
   return listingFromApiJson(j, isFavorite: favSet.contains(id));
 });

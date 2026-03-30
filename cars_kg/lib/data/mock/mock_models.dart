@@ -42,6 +42,8 @@ class Listing {
     this.latitude,
     this.longitude,
     this.locationDisplayName,
+    this.viewCount = 0,
+    this.favoriteCount = 0,
   });
 
   final String id;
@@ -71,6 +73,10 @@ class Listing {
   final double? latitude;
   final double? longitude;
   final String? locationDisplayName;
+  /// From API `view_count` (detail increments for non-owners).
+  final int viewCount;
+  /// From API `favorite_count` (how many users saved this listing).
+  final int favoriteCount;
 
   Listing copyWith({
     String? id,
@@ -100,6 +106,8 @@ class Listing {
     double? latitude,
     double? longitude,
     String? locationDisplayName,
+    int? viewCount,
+    int? favoriteCount,
   }) {
     return Listing(
       id: id ?? this.id,
@@ -129,6 +137,8 @@ class Listing {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       locationDisplayName: locationDisplayName ?? this.locationDisplayName,
+      viewCount: viewCount ?? this.viewCount,
+      favoriteCount: favoriteCount ?? this.favoriteCount,
     );
   }
 }

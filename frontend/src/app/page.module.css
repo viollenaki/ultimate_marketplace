@@ -38,8 +38,24 @@
   gap: 24px;
 }
 
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+}
+
+.code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
 .intro h1 {
-  max-width: 320px;
+  max-width: 480px;
   font-size: 40px;
   font-weight: 600;
   line-height: 48px;
@@ -58,6 +74,71 @@
 
 .intro a {
   font-weight: 500;
+  color: var(--text-primary);
+}
+
+.hubGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 720px;
+  margin-top: 8px;
+}
+
+.hubCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--button-secondary-border);
+  background: var(--foreground);
+  text-align: left;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  color: inherit;
+}
+
+.hubCard:hover {
+  border-color: var(--text-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.hubCardMuted {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px dashed var(--button-secondary-border);
+  background: transparent;
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+.hubCardTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hubCardMuted .hubCardTitle {
+  color: var(--text-secondary);
+}
+
+.hubCardDesc {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.hubCardCta {
+  margin-top: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -124,8 +205,8 @@ a.secondary {
 }
 
 @media (prefers-color-scheme: dark) {
-  .logo {
-    filter: invert();
+  .code {
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .page {

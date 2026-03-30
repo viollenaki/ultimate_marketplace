@@ -6,7 +6,7 @@ from typing import cast
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps.auth import get_current_user
+from app.api.deps.auth import get_current_user, get_optional_user
 from app.api.listing_payload import (
     listing_detail_response_from_orm,
     listing_response_from_orm,
@@ -14,6 +14,8 @@ from app.api.listing_payload import (
 from app.core.exceptions import AppException
 from app.db.database import get_db
 from app.models import User
+from app.repositories.favorite_repository import FavoriteRepository
+from app.repositories.listing_repository import ListingRepository
 from app.schemas.listing import (
     ListingCreate,
     ListingListResponse,
@@ -21,7 +23,9 @@ from app.schemas.listing import (
     ListingUpdate,
 )
 from app.schemas.media import ListingMediaResponse
+from app.schemas.report import ListingReportCreate, ListingReportCreatedResponse
 from app.services.listing_media_service import ListingMediaService
+from app.services.listing_report_service import ListingReportService
 from app.services.listing_service import ListingService
 
 router = APIRouter()
@@ -80,8 +84,17 @@ async def list_public_listings(
         colors=_csv_list(colors),
         require_no_accident=require_no_accident,
     )
+    fav = FavoriteRepository()
+    ids_list = [cast(int, r.id) for r in rows]
+    fav_counts = await fav.counts_for_listings(db, ids_list)
     return ListingListResponse(
-        items=[listing_response_from_orm(r) for r in rows],
+        items=[
+            listing_response_from_orm(
+                r,
+                favorite_count=fav_counts.get(cast(int, r.id), 0),
+            )
+            for r in rows
+        ],
         total=total,
     )
 
@@ -97,7 +110,16 @@ async def list_my_listings(
 ) -> list[ListingResponse]:
     service = ListingService(db)
     rows = await service.list_mine(cast(int, current_user.id))
-    return [listing_response_from_orm(r) for r in rows]
+    fav = FavoriteRepository()
+    ids_list = [cast(int, r.id) for r in rows]
+    fav_counts = await fav.counts_for_listings(db, ids_list)
+    return [
+        listing_response_from_orm(
+            r,
+            favorite_count=fav_counts.get(cast(int, r.id), 0),
+        )
+        for r in rows
+    ]
 
 
 @router.post(
@@ -119,43 +141,24 @@ async def create_listing(
             status_code=e.status_code,
             detail={"success": False, "error": e.error},
         ) from None
-    return listing_response_from_orm(row)
+    return listing_response_from_orm(row, favorite_count=0)
 
 
-@router.get(
-    "/{listing_id}",
-    response_model=ListingResponse,
-    summary="Listing detail",
+@router.post(
+    "/{listing_id}/report",
+    response_model=ListingReportCreatedResponse,
+    status_code=201,
+    summary="Report a listing (requires login; one active report per user per listing)",
 )
-async def get_listing(
+async def report_listing(
     listing_id: int,
-    db: AsyncSession = Depends(get_db),
-) -> ListingResponse:
-    service = ListingService(db)
-    try:
-        row = await service.get_by_id(listing_id)
-    except AppException as e:
-        raise HTTPException(
-            status_code=e.status_code,
-            detail={"success": False, "error": e.error},
-        ) from None
-    return listing_detail_response_from_orm(row)
-
-
-@router.patch(
-    "/{listing_id}",
-    response_model=ListingResponse,
-    summary="Update own listing (including map coordinates)",
-)
-async def update_listing(
-    listing_id: int,
-    body: ListingUpdate,
+    body: ListingReportCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> ListingResponse:
-    service = ListingService(db)
+) -> ListingReportCreatedResponse:
+    service = ListingReportService(db)
     try:
-        row = await service.update(
+        row = await service.submit_listing_report(
             cast(int, current_user.id),
             listing_id,
             body,
@@ -165,7 +168,10 @@ async def update_listing(
             status_code=e.status_code,
             detail={"success": False, "error": e.error},
         ) from None
-    return listing_response_from_orm(row)
+    return ListingReportCreatedResponse(
+        id=cast(int, row.id),
+        listing_id=listing_id,
+    )
 
 
 @router.post(
@@ -192,3 +198,59 @@ async def upload_listing_media(
             detail={"success": False, "error": e.error},
         ) from None
     return ListingMediaResponse.model_validate(media)
+
+
+@router.get(
+    "/{listing_id}",
+    response_model=ListingResponse,
+    summary="Listing detail",
+)
+async def get_listing(
+    listing_id: int,
+    db: AsyncSession = Depends(get_db),
+    viewer: User | None = Depends(get_optional_user),
+) -> ListingResponse:
+    service = ListingService(db)
+    try:
+        row = await service.get_by_id(listing_id)
+    except AppException as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"success": False, "error": e.error},
+        ) from None
+    owner_id = cast(int, row.owner_id)
+    watcher_id = cast(int, viewer.id) if viewer else None
+    if watcher_id is None or watcher_id != owner_id:
+        row.view_count = await ListingRepository.increment_view_count(db, listing_id)
+        await db.commit()
+    fav = FavoriteRepository()
+    fc = await fav.count_for_listing(db, listing_id)
+    return listing_detail_response_from_orm(row, favorite_count=fc)
+
+
+@router.patch(
+    "/{listing_id}",
+    response_model=ListingResponse,
+    summary="Update own listing (including map coordinates)",
+)
+async def update_listing(
+    listing_id: int,
+    body: ListingUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ListingResponse:
+    service = ListingService(db)
+    try:
+        row = await service.update(
+            cast(int, current_user.id),
+            listing_id,
+            body,
+        )
+    except AppException as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"success": False, "error": e.error},
+        ) from None
+    fav = FavoriteRepository()
+    fc = await fav.count_for_listing(db, listing_id)
+    return listing_response_from_orm(row, favorite_count=fc)

@@ -102,6 +102,8 @@ class ListingService:
             status=ListingStatus.approved.value,
             moderation_status="approved",
             published_at=datetime.now(timezone.utc),
+            expires_at=body.expires_at,
+            additional_attributes=body.additional_attributes,
         )
         await self._listings.create(self._session, row)
         await self._session.commit()

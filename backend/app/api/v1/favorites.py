@@ -39,7 +39,15 @@ async def list_favorites(
 ) -> list[ListingResponse]:
     repo = FavoriteRepository()
     rows = await repo.list_listings(db, cast(int, current_user.id))
-    return [listing_response_from_orm(r) for r in rows]
+    ids_list = [cast(int, r.id) for r in rows]
+    fav_counts = await repo.counts_for_listings(db, ids_list)
+    return [
+        listing_response_from_orm(
+            r,
+            favorite_count=fav_counts.get(cast(int, r.id), 0),
+        )
+        for r in rows
+    ]
 
 
 @router.post(

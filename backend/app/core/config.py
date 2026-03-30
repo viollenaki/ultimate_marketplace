@@ -4,7 +4,7 @@ Application configuration settings.
 import json
 import os
 import secrets
-from typing import List
+from typing import List, Set
 
 from pydantic import Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -95,6 +95,22 @@ class Settings(BaseSettings):
     # PEM; in .env use \n for newlines
     FCM_PRIVATE_KEY: str = Field(default="")
 
+    # Admin API (`/admin/...`) is unauthenticated in app code; restrict at the edge if needed.
+    # Retained for compatibility; not read by `require_admin_access`.
+    ADMIN_ACCESS_KEY: str = Field(default="")
+    ADMIN_EMAILS: str = Field(
+        default="",
+        description="Unused for `/admin` in current code (legacy allowlist helper).",
+    )
+
+    @computed_field
+    @property
+    def admin_email_allowlist(self) -> Set[str]:
+        return {
+            e.strip().lower()
+            for e in self.ADMIN_EMAILS.split(",")
+            if e.strip()
+        }
 
 # Create settings instance
 settings = Settings()

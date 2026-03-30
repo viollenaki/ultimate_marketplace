@@ -20,8 +20,18 @@ class ListingApiService {
 
   String _errorFromDio(DioException e) {
     final data = e.response?.data;
-    if (data is Map && data['error'] is String) {
-      return data['error'] as String;
+    if (data is Map) {
+      final err = data['error'];
+      if (err is String) {
+        return err;
+      }
+      final detail = data['detail'];
+      if (detail is String) {
+        return detail;
+      }
+      if (detail is Map && detail['error'] is String) {
+        return detail['error'] as String;
+      }
     }
     return e.message ?? 'Request failed';
   }
@@ -88,6 +98,23 @@ class ListingApiService {
         return [];
       }
       return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } on DioException catch (e) {
+      throw ListingApiException(_errorFromDio(e), statusCode: e.response?.statusCode);
+    }
+  }
+
+  Future<void> reportListing(
+    int listingId, {
+    required String reasonCode,
+    String? reasonDetails,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'reason_code': reasonCode,
+        if (reasonDetails != null && reasonDetails.trim().isNotEmpty)
+          'reason_details': reasonDetails.trim(),
+      };
+      await _client.postJson('/listings/$listingId/report', data: body);
     } on DioException catch (e) {
       throw ListingApiException(_errorFromDio(e), statusCode: e.response?.statusCode);
     }

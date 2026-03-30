@@ -1,6 +1,6 @@
 from typing import cast
 
-from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy import and_, case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -28,6 +28,24 @@ def _public_feed_where():
 
 
 class ListingRepository:
+    @staticmethod
+    async def increment_view_count(
+        session: AsyncSession,
+        listing_id: int,
+    ) -> int:
+        res = await session.execute(
+            update(Listing)
+            .where(Listing.id == listing_id, Listing.is_deleted.is_(False))
+            .values(view_count=Listing.view_count + 1)
+        )
+        if res.rowcount == 0:
+            return 0
+        await session.flush()
+        vc = await session.execute(
+            select(Listing.view_count).where(Listing.id == listing_id)
+        )
+        return int(vc.scalar_one() or 0)
+
     @staticmethod
     async def get_by_id(session: AsyncSession, listing_id: int) -> Listing | None:
         result = await session.execute(

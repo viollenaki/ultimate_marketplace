@@ -10,10 +10,11 @@ import '../../../data/mock/mock_models.dart';
 import '../../../data/mock/mock_providers.dart';
 import '../../../shared/widgets/app_snackbar.dart';
 import '../../../shared/widgets/auth_required_dialog.dart';
+import '../../../shared/widgets/listing_report_sheet.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import '../../chat/data/conversations_api.dart';
-import '../../favorites/presentation/favorite_optimistic_notifier.dart';
 import 'providers/remote_listing_provider.dart';
+import 'widgets/listing_detail_lazy_favorite_button.dart';
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
   const ListingDetailScreen({super.key, required this.listingId});
@@ -37,7 +38,6 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
 
     if (numericId != null) {
       final asyncListing = ref.watch(remoteListingProvider(numericId));
-      final favoriteOverrides = ref.watch(favoriteOptimisticNotifierProvider);
       return asyncListing.when(
         loading: () => Scaffold(
           appBar: AppBar(),
@@ -63,10 +63,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           listing.location,
           favoriteListing: listing,
           favoriteApiId: numericId,
-          isFavorite: FavoriteOptimisticNotifier.effectiveFavorite(
-            favoriteOverrides,
-            listing,
-          ),
+          viewCount: listing.viewCount,
+          favoriteCount: listing.favoriteCount,
+          showOwnerAnalytics: authState.userId != null &&
+              authState.userId == int.tryParse(listing.owner.id),
         ),
       );
     }
@@ -101,8 +101,20 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       priceFormatter: price,
       favoriteListing: listing,
       favoriteApiId: null,
-      isFavorite: listing.isFavorite,
+      viewCount: listing.viewCount,
+      favoriteCount: listing.favoriteCount,
+      showOwnerAnalytics: authState.userId != null &&
+          authState.userId == int.tryParse(listing.owner.id),
     );
+  }
+
+  Future<void> _openReportListing(BuildContext context, int listingId) async {
+    if (!ref.read(authControllerProvider).isAuthenticated) {
+      await showAuthRequiredDialog(context);
+      return;
+    }
+    if (!context.mounted) return;
+    await showListingReportSheet(context, listingId: listingId);
   }
 
   Future<void> _openChatWithSeller(
@@ -171,7 +183,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     NumberFormat? priceFormatter,
     Listing? favoriteListing,
     int? favoriteApiId,
-    required bool isFavorite,
+    int viewCount = 0,
+    int favoriteCount = 0,
+    bool showOwnerAnalytics = false,
   }) {
     final priceFmt = priceFormatter ??
         NumberFormat.currency(symbol: currency, decimalDigits: 0);
@@ -192,22 +206,17 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             pinned: true,
             expandedHeight: 300,
             actions: [
-              IconButton(
-                onPressed: favoriteApiId == null || favoriteListing == null
-                    ? () {
-                        showNotReadySnackBar(
-                          context,
-                          'Favorites use the API; turn off demo data.',
-                        );
-                      }
-                    : () => ref
-                        .read(favoriteOptimisticNotifierProvider.notifier)
-                        .requestToggle(favoriteListing, context),
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.redAccent : null,
+              if (favoriteApiId != null &&
+                  !showOwnerAnalytics &&
+                  favoriteListing != null)
+                IconButton(
+                  tooltip: 'Report listing',
+                  onPressed: () => _openReportListing(context, favoriteApiId),
+                  icon: Icon(
+                    Icons.flag_outlined,
+                    color: AppPalette.textSecondary,
+                  ),
                 ),
-              ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
@@ -297,6 +306,52 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     description,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
+                  if (showOwnerAnalytics) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppPalette.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppPalette.textSecondary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.visibility_outlined,
+                            size: 20,
+                            color: AppPalette.textSecondary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$viewCount views',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                          const SizedBox(width: 20),
+                          Icon(
+                            Icons.bookmark_outline,
+                            size: 20,
+                            color: AppPalette.textSecondary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$favoriteCount saves',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -405,38 +460,19 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      OutlinedButton(
-                        onPressed: () async {
-                          if (!authState.isAuthenticated) {
-                            await showAuthRequiredDialog(context);
-                            return;
-                          }
-                          if (context.mounted) {
-                            showNotReadySnackBar(
-                              context,
-                              'Promotions integration soon',
-                            );
-                          }
-                        },
-                        child: Text(l10n.t('promote')),
-                      ),
-                      const SizedBox(width: 10),
-                      IconButton.outlined(
-                        onPressed: favoriteApiId == null || favoriteListing == null
-                            ? () {
-                                showNotReadySnackBar(
-                                  context,
-                                  'Favorites use the API; turn off demo data.',
-                                );
-                              }
-                            : () => ref
-                                .read(favoriteOptimisticNotifierProvider.notifier)
-                                .requestToggle(favoriteListing, context),
-                        icon: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorite ? Colors.redAccent : null,
+                      if (favoriteListing != null)
+                        ListingDetailLazyFavoriteButton(
+                          listing: favoriteListing,
+                          listingId: favoriteApiId ?? 0,
+                          onDemoModeTap: favoriteApiId == null
+                              ? () {
+                                  showNotReadySnackBar(
+                                    context,
+                                    'Favorites use the API; turn off demo data.',
+                                  );
+                                }
+                              : null,
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 80),
